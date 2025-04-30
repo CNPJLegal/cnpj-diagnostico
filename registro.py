@@ -1,18 +1,20 @@
 # registro.py
+
 from flask import jsonify
 import datetime
+import gspread
 import os
 import json
-import gspread
 from google.oauth2.service_account import Credentials
 
 TOKEN_SECRETO = "CNPJLegalToken01"
 PLANILHA_NOME = "ConsultasCNPJ"
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-# Carrega a credencial via variável de ambiente
+# Lê credenciais via variável de ambiente segura
 info = json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"])
 creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+
 gc = gspread.authorize(creds)
 sheet = gc.open(PLANILHA_NOME).sheet1
 
