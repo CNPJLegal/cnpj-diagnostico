@@ -4,12 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Consulta CNPJ</title>
-
-  <!-- Font Awesome -->
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-  <!-- CSS via Flask -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
   <section class="hero">
@@ -35,10 +32,6 @@
   <script>
     function limparMascara(cnpj) {
       return cnpj.replace(/\D/g, '');
-    }
-
-    function validarCNPJ(cnpj) {
-      return cnpj.length === 14;
     }
 
     document.getElementById('cnpjInput').addEventListener('input', function (e) {
