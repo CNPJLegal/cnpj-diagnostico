@@ -12,14 +12,16 @@
       background-color: #000;
       color: #fff;
     }
+
     .hero {
       position: relative;
       height: 80vh;
-      background: url('https://cnpjlegal.com.br/wp-content/uploads/2025/03/Capa-YouTube.png') no-repeat center top;
+      background: url('https://cnpjlegal.com.br/wp-content/uploads/2025/03/Capa-YouTube.png') no-repeat center;
       background-size: cover;
-      background-position-y: 0px;
+      background-position-y: 40%;
       overflow: hidden;
     }
+
     .hero::after {
       content: '';
       position: absolute;
@@ -31,6 +33,7 @@
       z-index: 1;
       pointer-events: none;
     }
+
     .headline-card {
       position: absolute;
       bottom: -40px;
@@ -45,16 +48,19 @@
       max-width: 700px;
       text-align: center;
     }
+
     .headline-card h1 {
       font-size: 24px;
       color: #39c409;
       margin-bottom: 10px;
     }
+
     .headline-card p {
       font-size: 16px;
       color: #ccc;
       margin-bottom: 20px;
     }
+
     .card-list {
       display: flex;
       flex-wrap: wrap;
@@ -62,12 +68,14 @@
       justify-content: center;
       margin-bottom: 20px;
     }
+
     .card-item {
       background-color: #0f3ef9;
       padding: 10px 15px;
       border-radius: 32px;
       font-size: 14px;
     }
+
     .container {
       max-width: 480px;
       margin: 100px auto 40px;
@@ -76,6 +84,7 @@
       padding: 30px;
       border-radius: 20px;
     }
+
     input, button {
       width: 100%;
       padding: 12px;
@@ -84,21 +93,25 @@
       border: none;
       font-size: 16px;
     }
+
     input {
       background: #eee;
       color: #000;
     }
+
     button {
       background-color: #39c409;
       color: #000;
       cursor: pointer;
     }
+
     .chatbox {
       margin-top: 20px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
+
     .msg-bot {
       align-self: flex-start;
       background: #0f3ef9;
@@ -107,6 +120,7 @@
       border-radius: 16px;
       max-width: 90%;
     }
+
     .msg-user {
       align-self: flex-end;
       background: white;
@@ -115,6 +129,7 @@
       border-radius: 16px;
       max-width: 90%;
     }
+
     .spinner {
       border: 4px solid #ccc;
       border-top: 4px solid #39c409;
@@ -124,6 +139,7 @@
       animation: spin 1s linear infinite;
       margin: 20px auto;
     }
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
