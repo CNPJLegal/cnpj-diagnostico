@@ -1,57 +1,65 @@
 # consulta.py
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-import time
 import base64
-from io import BytesIO
-from PIL import Image
+import time
 
-def buscar_situacao_cadastral(cnpj, captcha_resposta=None, session=None):
+def diagnostico_cnpj(cnpj, captcha_resposta=None):
     options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument("--headless")  # roda sem abrir janela
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
 
+    # Inicializa o ChromeDriver
     driver = webdriver.Chrome(options=options)
 
     try:
-        # Acessar página da Receita
+        # Vai para a página da Receita
         driver.get("https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/Cnpjreva_Solicitacao.asp")
 
-        # Preencher CNPJ
-        driver.find_element(By.NAME, "cnpj").send_keys(cnpj)
+        # Preenche o campo do CNPJ
+        input_cnpj = driver.find_element(By.NAME, "cnpj")
+        input_cnpj.send_keys(cnpj)
 
-        # Captura imagem do CAPTCHA
-        captcha_img = driver.find_element(By.ID, "imgCaptcha")
-        captcha_base64 = captcha_img.screenshot_as_base64
+        # Captura o CAPTCHA
+        captcha_element = driver.find_element(By.ID, "imgCaptcha")
+        captcha_base64 = captcha_element.screenshot_as_base64
 
+        # Se ainda não tem a resposta do CAPTCHA, retorna a imagem
         if not captcha_resposta:
-            # Encerrar sessão e retornar CAPTCHA para interface
-            driver.quit()
             return { "captcha": captcha_base64 }
 
-        # Preencher o CAPTCHA e enviar
-        driver.find_element(By.NAME, "txtTexto_captcha_serpro_gov_br").send_keys(captcha_resposta)
+        # Preenche o CAPTCHA e envia
+        input_captcha = driver.find_element(By.NAME, "txtTexto_captcha_serpro_gov_br")
+        input_captcha.send_keys(captcha_resposta)
+
+        # Clica no botão de envio
         driver.find_element(By.NAME, "submit1").click()
         time.sleep(2)
 
+        # Captura o HTML da resposta
         html = driver.page_source
 
-        # Verificar status
-        if "CNPJ BAIXADO" in html:
+        # Diagnóstico básico por palavras-chave
+        html_upper = html.upper()  # padroniza pra comparar
+
+        if "CNPJ BAIXADO" in html_upper:
             status = "baixado"
-        elif "CNPJ INAPTO" in html:
+        elif "CNPJ INAPTO" in html_upper:
             status = "inapto"
-        elif "CNPJ ATIVO" in html:
+        elif "CNPJ ATIVO" in html_upper:
             status = "ativo"
+        elif "DIGITADO NÃO CONFERE" in html_upper or "CÓDIGO DA IMAGEM" in html_upper:
+            status = "captcha_incorreto"
         else:
             status = "erro"
-
-        driver.quit()
 
         return { "status": status }
 
     except Exception as e:
+        return { "erro": f"Erro interno: {str(e)}" }
+
+    finally:
         driver.quit()
-        return { "erro": str(e) }
