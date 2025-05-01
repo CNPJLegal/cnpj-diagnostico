@@ -16,9 +16,8 @@
     .hero {
       position: relative;
       height: 80vh;
-      background: url('https://cnpjlegal.com.br/wp-content/uploads/2025/03/Capa-YouTube.png') no-repeat center;
+      background: url('https://cnpjlegal.com.br/wp-content/uploads/2025/03/Capa-YouTube.png') no-repeat center -160px;
       background-size: cover;
-      background-position-y: 40%;
       overflow: hidden;
     }
 
@@ -28,8 +27,8 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 300px;
-      background: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+      height: 200px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
       z-index: 1;
       pointer-events: none;
     }
@@ -186,52 +185,62 @@
     });
 
     async function consultarCNPJ() {
-      const cnpjBruto = document.getElementById('cnpjInput').value;
-      const cnpj = limparMascara(cnpjBruto);
+      const input = document.getElementById('cnpjInput');
+      const cnpj = limparMascara(input.value);
       const chat = document.getElementById('resultado');
-      chat.innerHTML = '';
+      chat.innerHTML = `<div class='msg-user'>${input.value}</div><div class='spinner'></div>`;
 
-      if (!validarCNPJ(cnpj)) {
-        chat.innerHTML = `<div class='msg-bot'>CNPJ inválido. Digite os 14 números corretamente.</div>`;
-        return;
-      }
-
-      chat.innerHTML = `<div class='msg-user'>${cnpjBruto}</div><div class='spinner'></div>`;
-
-      await fetch('https://diagnostico-cnpj.onrender.com/registro', {
+      const res = await fetch('/consultar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cnpj })
       });
 
-      try {
-        const response = await fetch('https://diagnostico-cnpj.onrender.com/consultar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cnpj })
-        });
+      const data = await res.json();
+      chat.innerHTML = '';
 
-        if (!response.ok) throw new Error();
-        const d = await response.json();
-
-        chat.innerHTML = `
-          <div class='msg-user'>${cnpjBruto}</div>
-          <div class='msg-bot'><b>Situação Cadastral:</b> ${d.situacao_cadastral}<br>${d.texto_situacao}</div>
-          <div class='msg-bot'><b>Dívida Ativa:</b> ${d.divida_ativa ? 'Sim' : 'Não'}<br>${d.texto_divida}</div>
-          <div class='msg-bot'><b>Declaração Anual:</b> ${d.declaracao_anual ? 'Pendente' : 'OK'}<br>${d.texto_declaracao}</div>
-          <div class='msg-bot'><b>Guias Mensais:</b> ${d.demais_guias ? 'Em aberto' : 'Nenhuma'}<br>${d.texto_guias}</div>
-          <div class='msg-bot'><b>Enquadramento:</b> ${d.enquadramento}<br>${d.texto_enquadramento}</div>
-          <div class='msg-bot'>
-            <b>Proposta de Regularização:</b><br>
-            ${d.proposta}<br><br>
-            <a class="pagamento-btn" href="https://pagamento.cnpjlegal.com.br/?cnpj=${cnpj}" target="_blank">
-              Regularizar Agora
-            </a>
-          </div>
+      if (data.captcha) {
+        chat.innerHTML += `
+          <div class='msg-bot'>🧩 Precisamos que você resolva este CAPTCHA antes de continuar:</div>
+          <img src="data:image/png;base64,${data.captcha}" style="width:200px;border-radius:12px;margin:10px auto;" />
+          <input id="captchaInput" placeholder="Digite o texto da imagem" />
+          <button onclick="enviarCaptcha('${cnpj}')">Enviar</button>
         `;
-      } catch {
-        chat.innerHTML = `<div class='msg-bot'>Erro na consulta. Tente novamente.</div>`;
+      } else {
+        mostrarMensagemFinal(data.status);
       }
+    }
+
+    async function enviarCaptcha(cnpj) {
+      const captcha = document.getElementById('captchaInput').value;
+      const chat = document.getElementById('resultado');
+      chat.innerHTML += `<div class='msg-user'>${captcha}</div><div class='spinner'></div>`;
+
+      const res = await fetch('/consultar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cnpj, captcha })
+      });
+
+      const data = await res.json();
+      mostrarMensagemFinal(data.status);
+    }
+
+    function mostrarMensagemFinal(status) {
+      const chat = document.getElementById('resultado');
+      let msg = '';
+
+      if (status === 'ativo') {
+        msg = "✅ Confirmamos que o seu CNPJ está <b>ativo</b> na Receita Federal. No entanto, observamos que existem algumas guias pendentes de pagamento.";
+      } else if (status === 'baixado') {
+        msg = "⚠️ Identificamos que o seu CNPJ consta como <b>baixado</b> na Receita Federal. Ainda existem tributos mensais não quitados.";
+      } else if (status === 'inapto') {
+        msg = "🚫 Seu CNPJ está classificado como <b>inapto</b> na Receita Federal devido a pendências.";
+      } else {
+        msg = "❌ Não conseguimos identificar o status do seu CNPJ. Tente novamente mais tarde.";
+      }
+
+      chat.innerHTML += `<div class='msg-bot'>${msg}</div>`;
     }
   </script>
 </body>
