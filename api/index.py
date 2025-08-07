@@ -16,10 +16,19 @@ app = Flask(__name__, static_folder="../static", template_folder="../templates")
 def index():
     return render_template('index.html')
 
-# Rota para servir arquivos estáticos (CSS, imagens, favicon)
+# Rota para servir arquivos estáticos (CSS, imagens, favicon, etc.)
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory(app.static_folder, filename)
+
+# Rota para servir favicon diretamente
+@app.route('/favicon.ico')
+def favicon():
+    try:
+        return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    except FileNotFoundError:
+        logger.warning("Favicon não encontrado, retornando vazio.")
+        return '', 204
 
 @app.route('/consultar', methods=['POST'])
 def consultar():
