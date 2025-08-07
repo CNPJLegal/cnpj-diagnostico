@@ -5,75 +5,84 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import base64
 import time
+import logging
 
-def diagnostico_cnpj(data):
-    print(f"[LOG] Consulta recebida: {data}")
+logger = logging.getLogger(__name__)
 
-    cnpj = data.get("cnpj")
-    captcha_resposta = data.get("captcha")
-
+def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
+    """
+    Realiza o diagnóstico básico do CNPJ consultando o site da Receita Federal.
+    Retorna:
+        - {"captcha": <base64>} se for necessário o usuário resolver captcha
+        - {"status": "ativo" | "baixado" | "inapto" | "captcha_incorreto" | "erro"}
+    """
     if not cnpj:
-        print("[ERRO] Nenhum CNPJ recebido!")
-        return { "erro": "CNPJ ausente na requisição." }
+        logger.error("Nenhum CNPJ recebido na função diagnostico_cnpj")
+        return {"erro": "CNPJ ausente na requisição."}
 
     options = Options()
-    options.add_argument("--headless")  # Executa sem interface gráfica
+    options.add_argument("--headless")  
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920x1080")
+
+    driver = None
 
     try:
-        print("[LOG] Iniciando ChromeDriver...")
+        logger.info(f"Iniciando consulta para CNPJ: {cnpj}")
         driver = webdriver.Chrome(options=options)
 
-        print("[LOG] Acessando site da Receita...")
+        logger.info("Acessando site da Receita Federal...")
         driver.get("https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/Cnpjreva_Solicitacao.asp")
 
-        print("[LOG] Preenchendo CNPJ...")
+        logger.info("Preenchendo CNPJ no formulário...")
         input_cnpj = driver.find_element(By.NAME, "cnpj")
+        input_cnpj.clear()
         input_cnpj.send_keys(cnpj)
 
-        print("[LOG] Capturando CAPTCHA em base64...")
+        # Captura captcha
         captcha_element = driver.find_element(By.ID, "imgCaptcha")
         captcha_base64 = captcha_element.screenshot_as_base64
 
-        # Retorna imagem se ainda não houver resposta de captcha
+        # Se não houver resposta de captcha, retorna para o frontend
         if not captcha_resposta:
-            print("[LOG] Retornando imagem do CAPTCHA para o frontend.")
-            driver.quit()
-            return { "captcha": captcha_base64 }
+            logger.info("Retornando captcha para o usuário resolver.")
+            return {"captcha": captcha_base64}
 
-        print("[LOG] Enviando resposta do CAPTCHA...")
+        # Preenche o captcha e envia
+        logger.info("Enviando resposta do captcha...")
         input_captcha = driver.find_element(By.NAME, "txtTexto_captcha_serpro_gov_br")
+        input_captcha.clear()
         input_captcha.send_keys(captcha_resposta)
         driver.find_element(By.NAME, "submit1").click()
 
-        time.sleep(2)
+        time.sleep(2)  # Aguardar processamento
 
-        html = driver.page_source
-        html_upper = html.upper()
+        html = driver.page_source.upper()
 
-        print("[LOG] Analisando retorno da Receita...")
-        if "CNPJ BAIXADO" in html_upper:
+        logger.info("Analisando retorno da Receita...")
+        if "CNPJ BAIXADO" in html:
             status = "baixado"
-        elif "CNPJ INAPTO" in html_upper:
+        elif "CNPJ INAPTO" in html:
             status = "inapto"
-        elif "CNPJ ATIVO" in html_upper:
+        elif "CNPJ ATIVO" in html:
             status = "ativo"
-        elif "DIGITADO NÃO CONFERE" in html_upper or "CÓDIGO DA IMAGEM" in html_upper:
+        elif "DIGITADO NÃO CONFERE" in html or "CÓDIGO DA IMAGEM" in html:
             status = "captcha_incorreto"
         else:
             status = "erro"
 
-        print(f"[LOG] Diagnóstico retornado: {status}")
-        return { "status": status }
+        logger.info(f"Diagnóstico obtido: {status}")
+        return {"status": status}
 
     except Exception as e:
-        print(f"[ERRO] Exceção durante a consulta: {str(e)}")
-        return { "erro": f"Erro interno: {str(e)}" }
+        logger.error(f"Erro durante a consulta: {str(e)}")
+        return {"erro": f"Erro interno: {str(e)}"}
 
     finally:
-        print("[LOG] Encerrando ChromeDriver.")
-        try:
-            driver.quit()
-        except:
-            print("[AVISO] driver.quit() falhou — talvez não tenha sido inicializado.")
+        if driver:
+            try:
+                driver.quit()
+                logger.info("ChromeDriver encerrado com sucesso.")
+            except Exception as e:
+                logger.warning(f"Falha ao encerrar ChromeDriver: {str(e)}")
