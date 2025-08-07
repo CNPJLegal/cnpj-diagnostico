@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Consulta CNPJ</title>
+  <title>Consulta CNPJ - Diagnóstico Completo</title>
+  <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/static/style.css" />
@@ -24,6 +25,10 @@
     .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004aad; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 10px auto; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
     img.captcha { display: block; margin: 10px auto; border-radius: 12px; }
+    @media (max-width: 600px) {
+      input[type=text] { width: 100%; }
+      .card-list { flex-direction: column; align-items: center; }
+    }
   </style>
 </head>
 <body>
@@ -42,7 +47,8 @@
   </section>
 
   <div class="container">
-    <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18">
+    <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
+    <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
     <button onclick="consultarCNPJ()">Consultar</button>
     <div id="resultado" class="chatbox"></div>
   </div>
@@ -66,6 +72,8 @@
       const cnpj = limparMascara(input.value);
       const chat = document.getElementById('resultado');
 
+      chat.innerHTML = ''; // Limpa antes de exibir nova consulta
+
       if (!cnpj || cnpj.length !== 14) {
         chat.innerHTML = `<div class='msg-bot'>⚠️ Digite um CNPJ válido com 14 números.</div>`;
         return;
@@ -80,21 +88,23 @@
           body: JSON.stringify({ cnpj })
         });
 
+        if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
+
         const data = await res.json();
         chat.innerHTML = '';
 
         if (data.captcha) {
           chat.innerHTML += `
             <div class='msg-bot'>🧩 Precisamos que você resolva este CAPTCHA antes de continuar:</div>
-            <img class="captcha" src="data:image/png;base64,${data.captcha}" style="width:200px;" />
-            <input id="captchaInput" placeholder="Digite o texto da imagem" />
+            <img class="captcha" src="data:image/png;base64,${data.captcha}" style="width:200px;" alt="Imagem do captcha" />
+            <input id="captchaInput" placeholder="Digite o texto da imagem" aria-label="Campo para resposta do captcha" />
             <button onclick="enviarCaptcha('${cnpj}')">Enviar</button>
           `;
         } else {
           mostrarMensagemFinal(data.status);
         }
       } catch (err) {
-        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao consultar. Tente novamente mais tarde.</div>`;
+        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao consultar: ${err.message}</div>`;
       }
     }
 
@@ -110,10 +120,12 @@
           body: JSON.stringify({ cnpj, captcha })
         });
 
+        if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
+
         const data = await res.json();
         mostrarMensagemFinal(data.status);
       } catch (err) {
-        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao enviar captcha. Tente novamente.</div>`;
+        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao enviar captcha: ${err.message}</div>`;
       }
     }
 
@@ -127,6 +139,8 @@
         msg = "⚠️ Identificamos que o seu CNPJ consta como <b>baixado</b> na Receita Federal. Ainda existem tributos mensais não quitados.";
       } else if (status === 'inapto') {
         msg = "🚫 Seu CNPJ está classificado como <b>inapto</b> na Receita Federal devido a pendências.";
+      } else if (status === 'captcha_incorreto') {
+        msg = "❌ O captcha informado está incorreto. Tente novamente.";
       } else {
         msg = "❌ Não conseguimos identificar o status do seu CNPJ. Tente novamente mais tarde.";
       }
