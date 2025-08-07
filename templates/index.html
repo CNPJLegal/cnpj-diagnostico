@@ -7,6 +7,24 @@
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f9fc; margin: 0; padding: 0; }
+    .hero { background: #004aad; color: white; padding: 30px 20px; text-align: center; }
+    .headline-card { max-width: 800px; margin: auto; }
+    .card-list { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+    .card-item { background: white; color: #004aad; padding: 10px 20px; margin: 5px; border-radius: 8px; font-weight: bold; }
+    .container { max-width: 500px; margin: 30px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; }
+    input[type=text] { padding: 10px; width: 80%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+    button { padding: 10px 20px; margin-top: 10px; background: #004aad; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #003080; }
+    .chatbox { text-align: left; margin-top: 20px; }
+    .msg-user, .msg-bot { padding: 10px; border-radius: 8px; margin-bottom: 10px; max-width: 90%; }
+    .msg-user { background: #004aad; color: white; align-self: flex-end; }
+    .msg-bot { background: #f1f1f1; color: black; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004aad; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 10px auto; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    img.captcha { display: block; margin: 10px auto; border-radius: 12px; }
+  </style>
 </head>
 <body>
   <section class="hero">
@@ -47,26 +65,36 @@
       const input = document.getElementById('cnpjInput');
       const cnpj = limparMascara(input.value);
       const chat = document.getElementById('resultado');
+
+      if (!cnpj || cnpj.length !== 14) {
+        chat.innerHTML = `<div class='msg-bot'>⚠️ Digite um CNPJ válido com 14 números.</div>`;
+        return;
+      }
+
       chat.innerHTML = `<div class='msg-user'>${input.value}</div><div class='spinner'></div>`;
 
-      const res = await fetch('/consultar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cnpj })
-      });
+      try {
+        const res = await fetch('/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cnpj })
+        });
 
-      const data = await res.json();
-      chat.innerHTML = '';
+        const data = await res.json();
+        chat.innerHTML = '';
 
-      if (data.captcha) {
-        chat.innerHTML += `
-          <div class='msg-bot'>🧩 Precisamos que você resolva este CAPTCHA antes de continuar:</div>
-          <img src="data:image/png;base64,${data.captcha}" style="width:200px;border-radius:12px;margin:10px auto;" />
-          <input id="captchaInput" placeholder="Digite o texto da imagem" />
-          <button onclick="enviarCaptcha('${cnpj}')">Enviar</button>
-        `;
-      } else {
-        mostrarMensagemFinal(data.status);
+        if (data.captcha) {
+          chat.innerHTML += `
+            <div class='msg-bot'>🧩 Precisamos que você resolva este CAPTCHA antes de continuar:</div>
+            <img class="captcha" src="data:image/png;base64,${data.captcha}" style="width:200px;" />
+            <input id="captchaInput" placeholder="Digite o texto da imagem" />
+            <button onclick="enviarCaptcha('${cnpj}')">Enviar</button>
+          `;
+        } else {
+          mostrarMensagemFinal(data.status);
+        }
+      } catch (err) {
+        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao consultar. Tente novamente mais tarde.</div>`;
       }
     }
 
@@ -75,14 +103,18 @@
       const chat = document.getElementById('resultado');
       chat.innerHTML += `<div class='msg-user'>${captcha}</div><div class='spinner'></div>`;
 
-      const res = await fetch('/consultar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cnpj, captcha })
-      });
+      try {
+        const res = await fetch('/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cnpj, captcha })
+        });
 
-      const data = await res.json();
-      mostrarMensagemFinal(data.status);
+        const data = await res.json();
+        mostrarMensagemFinal(data.status);
+      } catch (err) {
+        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao enviar captcha. Tente novamente.</div>`;
+      }
     }
 
     function mostrarMensagemFinal(status) {
