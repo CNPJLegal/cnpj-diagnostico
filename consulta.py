@@ -1,11 +1,10 @@
-# consulta.py
-
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-import base64
-import time
+from webdriver_manager.chrome import ChromeDriverManager
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -21,16 +20,22 @@ def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
         return {"erro": "CNPJ ausente na requisição."}
 
     options = Options()
-    options.add_argument("--headless")  
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920x1080")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-software-rasterizer")
+    options.add_argument("--disable-features=VizDisplayCompositor")
 
     driver = None
 
     try:
         logger.info(f"Iniciando consulta para CNPJ: {cnpj}")
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=options
+        )
 
         logger.info("Acessando site da Receita Federal...")
         driver.get("https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/Cnpjreva_Solicitacao.asp")
@@ -56,7 +61,7 @@ def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
         input_captcha.send_keys(captcha_resposta)
         driver.find_element(By.NAME, "submit1").click()
 
-        time.sleep(2)  # Aguardar processamento
+        time.sleep(2)  # Esperar processamento
 
         html = driver.page_source.upper()
 
