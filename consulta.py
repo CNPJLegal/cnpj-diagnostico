@@ -1,93 +1,152 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-import logging
-import time
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consulta CNPJ - Diagnóstico Completo</title>
+  <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f9fc; margin: 0; padding: 0; }
+    .hero { background: #004aad; color: white; padding: 30px 20px; text-align: center; }
+    .headline-card { max-width: 800px; margin: auto; }
+    .card-list { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+    .card-item { background: white; color: #004aad; padding: 10px 20px; margin: 5px; border-radius: 8px; font-weight: bold; }
+    .container { max-width: 500px; margin: 30px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; }
+    input[type=text] { padding: 10px; width: 80%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+    button { padding: 10px 20px; margin-top: 10px; background: #004aad; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #003080; }
+    .chatbox { text-align: left; margin-top: 20px; }
+    .msg-user, .msg-bot { padding: 10px; border-radius: 8px; margin-bottom: 10px; max-width: 90%; }
+    .msg-user { background: #004aad; color: white; align-self: flex-end; }
+    .msg-bot { background: #f1f1f1; color: black; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004aad; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 10px auto; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    img.captcha { display: block; margin: 10px auto; border-radius: 12px; }
+    @media (max-width: 600px) {
+      input[type=text] { width: 100%; }
+      .card-list { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="headline-card">
+      <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
+      <p>Identificamos todas as pendências associadas ao seu CNPJ:</p>
+      <div class="card-list">
+        <div class="card-item">Situação Cadastral</div>
+        <div class="card-item">Situação do Enquadramento</div>
+        <div class="card-item">Declaração Anual de Faturamento</div>
+        <div class="card-item">Dívida Ativa</div>
+        <div class="card-item">Demais Débitos</div>
+      </div>
+    </div>
+  </section>
 
-logger = logging.getLogger(__name__)
+  <div class="container">
+    <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
+    <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
+    <button onclick="consultarCNPJ()">Consultar</button>
+    <div id="resultado" class="chatbox"></div>
+  </div>
 
-def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
-    """
-    Realiza o diagnóstico básico do CNPJ consultando o site da Receita Federal.
-    Retorna:
-        - {"captcha": <base64>} se for necessário o usuário resolver captcha
-        - {"status": "ativo" | "baixado" | "inapto" | "captcha_incorreto" | "erro"}
-    """
-    if not cnpj:
-        logger.error("Nenhum CNPJ recebido na função diagnostico_cnpj")
-        return {"erro": "CNPJ ausente na requisição."}
+  <script>
+    function limparMascara(cnpj) {
+      return cnpj.replace(/\D/g, '');
+    }
 
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920x1080")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-software-rasterizer")
-    options.add_argument("--disable-features=VizDisplayCompositor")
+    document.getElementById('cnpjInput').addEventListener('input', function (e) {
+      let v = e.target.value.replace(/\D/g, '').slice(0, 14);
+      v = v.replace(/(\d{2})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d)/, '$1/$2');
+      v = v.replace(/(\d{4})(\d)/, '$1-$2');
+      e.target.value = v;
+    });
 
-    driver = None
+    async function consultarCNPJ() {
+      const input = document.getElementById('cnpjInput');
+      const cnpj = limparMascara(input.value);
+      const chat = document.getElementById('resultado');
 
-    try:
-        logger.info(f"Iniciando consulta para CNPJ: {cnpj}")
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+      chat.innerHTML = ''; // Limpa antes de exibir nova consulta
 
-        logger.info("Acessando site da Receita Federal...")
-        driver.get("https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/Cnpjreva_Solicitacao.asp")
+      if (!cnpj || cnpj.length !== 14) {
+        chat.innerHTML = `<div class='msg-bot'>⚠️ Digite um CNPJ válido com 14 números.</div>`;
+        return;
+      }
 
-        logger.info("Preenchendo CNPJ no formulário...")
-        input_cnpj = driver.find_element(By.NAME, "cnpj")
-        input_cnpj.clear()
-        input_cnpj.send_keys(cnpj)
+      chat.innerHTML = `<div class='msg-user'>${input.value}</div><div class='spinner'></div>`;
 
-        # Captura captcha
-        captcha_element = driver.find_element(By.ID, "imgCaptcha")
-        captcha_base64 = captcha_element.screenshot_as_base64
+      try {
+        const res = await fetch('/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cnpj })
+        });
 
-        # Se não houver resposta de captcha, retorna para o frontend
-        if not captcha_resposta:
-            logger.info("Retornando captcha para o usuário resolver.")
-            return {"captcha": captcha_base64}
+        if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
 
-        # Preenche o captcha e envia
-        logger.info("Enviando resposta do captcha...")
-        input_captcha = driver.find_element(By.NAME, "txtTexto_captcha_serpro_gov_br")
-        input_captcha.clear()
-        input_captcha.send_keys(captcha_resposta)
-        driver.find_element(By.NAME, "submit1").click()
+        const data = await res.json();
+        chat.innerHTML = '';
 
-        time.sleep(2)  # Esperar processamento
+        if (data.captcha) {
+          chat.innerHTML += `
+            <div class='msg-bot'>🧩 Precisamos que você resolva este CAPTCHA antes de continuar:</div>
+            <img class="captcha" src="data:image/png;base64,${data.captcha}" style="width:200px;" alt="Imagem do captcha" />
+            <input id="captchaInput" placeholder="Digite o texto da imagem" aria-label="Campo para resposta do captcha" />
+            <button onclick="enviarCaptcha('${cnpj}')">Enviar</button>
+          `;
+        } else {
+          mostrarMensagemFinal(data.status);
+        }
+      } catch (err) {
+        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao consultar: ${err.message}</div>`;
+      }
+    }
 
-        html = driver.page_source.upper()
+    async function enviarCaptcha(cnpj) {
+      const captcha = document.getElementById('captchaInput').value;
+      const chat = document.getElementById('resultado');
+      chat.innerHTML += `<div class='msg-user'>${captcha}</div><div class='spinner'></div>`;
 
-        logger.info("Analisando retorno da Receita...")
-        if "CNPJ BAIXADO" in html:
-            status = "baixado"
-        elif "CNPJ INAPTO" in html:
-            status = "inapto"
-        elif "CNPJ ATIVO" in html:
-            status = "ativo"
-        elif "DIGITADO NÃO CONFERE" in html or "CÓDIGO DA IMAGEM" in html:
-            status = "captcha_incorreto"
-        else:
-            status = "erro"
+      try {
+        const res = await fetch('/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cnpj, captcha })
+        });
 
-        logger.info(f"Diagnóstico obtido: {status}")
-        return {"status": status}
+        if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
 
-    except Exception as e:
-        logger.error(f"Erro durante a consulta: {str(e)}")
-        return {"erro": f"Erro interno: {str(e)}"}
+        const data = await res.json();
+        mostrarMensagemFinal(data.status);
+      } catch (err) {
+        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao enviar captcha: ${err.message}</div>`;
+      }
+    }
 
-    finally:
-        if driver:
-            try:
-                driver.quit()
-                logger.info("ChromeDriver encerrado com sucesso.")
-            except Exception as e:
-                logger.warning(f"Falha ao encerrar ChromeDriver: {str(e)}")
+    function mostrarMensagemFinal(status) {
+      const chat = document.getElementById('resultado');
+      let msg = '';
+
+      if (status === 'ativo') {
+        msg = "✅ Confirmamos que o seu CNPJ está <b>ativo</b> na Receita Federal. No entanto, observamos que existem algumas guias pendentes de pagamento.";
+      } else if (status === 'baixado') {
+        msg = "⚠️ Identificamos que o seu CNPJ consta como <b>baixado</b> na Receita Federal. Ainda existem tributos mensais não quitados.";
+      } else if (status === 'inapto') {
+        msg = "🚫 Seu CNPJ está classificado como <b>inapto</b> na Receita Federal devido a pendências.";
+      } else if (status === 'captcha_incorreto') {
+        msg = "❌ O captcha informado está incorreto. Tente novamente.";
+      } else {
+        msg = "❌ Não conseguimos identificar o status do seu CNPJ. Tente novamente mais tarde.";
+      }
+
+      chat.innerHTML += `<div class='msg-bot'>${msg}</div>`;
+    }
+  </script>
+</body>
+</html>
