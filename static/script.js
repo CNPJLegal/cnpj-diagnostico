@@ -32,6 +32,7 @@ async function consultarCNPJ() {
     input.style.display = 'none';
     botao.style.display = 'none';
 
+    // Adiciona spinner
     chat.innerHTML += `<div class="spinner"></div>`;
 
     try {
@@ -42,7 +43,9 @@ async function consultarCNPJ() {
         });
 
         const data = await res.json();
-        chat.innerHTML = `<div class="msg-user">${input.value}</div>`; // mantém CNPJ no topo
+
+        // Remove spinner
+        document.querySelector('.spinner')?.remove();
 
         if (data.erro) {
             chat.innerHTML += `<div class="msg-bot">❌ ${data.erro}</div>`;
@@ -51,7 +54,8 @@ async function consultarCNPJ() {
 
         iniciarConversa(data);
     } catch (err) {
-        chat.innerHTML += `<div class="msg-bot">❌ Erro ao consultar: ${err.message}</div>`;
+        document.querySelector('.spinner')?.remove();
+        chat.innerHTML += `<div class="msg-bot">❌ Ocorreu um erro na comunicação com a Receita Federal. Tente novamente mais tarde.</div>`;
     }
 }
 
@@ -63,22 +67,35 @@ function iniciarConversa(data) {
 
     // Situação cadastral real
     if (data.status === 'ativo') {
-        chat.innerHTML += `<div class="msg-bot">Confirmamos que seu CNPJ está ativo na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais pendentes.</div>`;
+        chat.innerHTML += `<div class="msg-bot">✅ Seu CNPJ está ativo na Receita Federal. No entanto, identificamos possíveis pendências que podem ser regularizadas.</div>`;
     } else if (data.status === 'baixado') {
-        chat.innerHTML += `<div class="msg-bot">Seu CNPJ está baixado (encerrado) na Receita Federal. Mesmo com o CNPJ baixado, ainda existem valores em aberto que precisam ser regularizados.</div>`;
+        chat.innerHTML += `<div class="msg-bot">⚠️ Seu CNPJ está baixado (encerrado) na Receita Federal. Ainda existem débitos que precisam ser quitados.</div>`;
     } else if (data.status === 'inapto') {
-        chat.innerHTML += `<div class="msg-bot">Seu CNPJ está inapto perante a Receita Federal devido a pendências existentes.</div>`;
+        chat.innerHTML += `<div class="msg-bot">🚫 Seu CNPJ está inapto perante a Receita Federal devido a pendências existentes.</div>`;
+    } else {
+        chat.innerHTML += `<div class="msg-bot">❌ Não foi possível identificar a situação cadastral do CNPJ.</div>`;
     }
 
-    // Dívida ativa (quando disponível)
+    // Informações adicionais
+    if (data.situacao_enquadramento) {
+        chat.innerHTML += `<div class="msg-bot">📌 Situação do enquadramento: ${data.situacao_enquadramento}</div>`;
+    }
+    if (data.declaracao_anual) {
+        chat.innerHTML += `<div class="msg-bot">📄 Declaração Anual: ${data.declaracao_anual}</div>`;
+    }
     if (data.divida_ativa && data.divida_ativa !== "Desconhecido (necessária integração PGFN)") {
-        chat.innerHTML += `<div class="msg-bot">Foi identificada dívida ativa vinculada ao seu CNPJ.</div>`;
+        chat.innerHTML += `<div class="msg-bot">💰 Dívida ativa: ${data.divida_ativa}</div>`;
+    }
+    if (data.valor_regularizacao) {
+        chat.innerHTML += `<div class="msg-bot">💵 Valor estimado para regularização: ${data.valor_regularizacao}</div>`;
     }
 
     // Botão verde de continuar
-    chat.innerHTML += `<div class="msg-bot">
-        <button style="background:#17e30d; color:#000; border:none; padding:8px 14px; border-radius:14px; cursor:pointer;" onclick="mostrarProposta()">Continuar diagnóstico</button>
-    </div>`;
+    chat.innerHTML += `
+        <div class="opcoes-botoes">
+            <button style="background:#17e30d; color:#000; border:none; padding:8px 14px; border-radius:14px; cursor:pointer;" onclick="mostrarProposta()">Continuar diagnóstico</button>
+        </div>
+    `;
 }
 
 function mostrarProposta() {
