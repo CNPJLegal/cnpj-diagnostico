@@ -101,7 +101,7 @@
             <button onclick="enviarCaptcha('${cnpj}')">Enviar</button>
           `;
         } else {
-          mostrarMensagemFinal(data.status);
+          mostrarMensagemFinal(data);
         }
       } catch (err) {
         chat.innerHTML = `<div class='msg-bot'>❌ Erro ao consultar: ${err.message}</div>`;
@@ -123,26 +123,32 @@
         if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
 
         const data = await res.json();
-        mostrarMensagemFinal(data.status);
+        mostrarMensagemFinal(data);
       } catch (err) {
         chat.innerHTML = `<div class='msg-bot'>❌ Erro ao enviar captcha: ${err.message}</div>`;
       }
     }
 
-    function mostrarMensagemFinal(status) {
+    function mostrarMensagemFinal(data) {
       const chat = document.getElementById('resultado');
       let msg = '';
 
-      if (status === 'ativo') {
-        msg = "✅ Confirmamos que o seu CNPJ está <b>ativo</b> na Receita Federal. No entanto, observamos que existem algumas guias pendentes de pagamento.";
-      } else if (status === 'baixado') {
-        msg = "⚠️ Identificamos que o seu CNPJ consta como <b>baixado</b> na Receita Federal. Ainda existem tributos mensais não quitados.";
-      } else if (status === 'inapto') {
-        msg = "🚫 Seu CNPJ está classificado como <b>inapto</b> na Receita Federal devido a pendências.";
-      } else if (status === 'captcha_incorreto') {
+      if (data.status === 'ativo') {
+        msg = "✅ Seu CNPJ está <b>ativo</b> na Receita Federal. Há pendências que podem ser regularizadas.";
+      } else if (data.status === 'baixado') {
+        msg = "⚠️ Seu CNPJ está <b>baixado</b> na Receita Federal. Ainda existem tributos mensais não quitados.";
+      } else if (data.status === 'inapto') {
+        msg = "🚫 Seu CNPJ está <b>inapto</b> na Receita Federal devido a pendências.";
+      } else if (data.status === 'captcha_incorreto') {
         msg = "❌ O captcha informado está incorreto. Tente novamente.";
       } else {
-        msg = "❌ Não conseguimos identificar o status do seu CNPJ. Tente novamente mais tarde.";
+        msg = "❌ Não conseguimos identificar o status do seu CNPJ.";
+      }
+
+      if (data.valor_regularizacao) {
+        msg += `<br><br>💰 <b>Valor para regularização:</b> R$ ${data.valor_regularizacao.toFixed(2).replace('.', ',')}`;
+        msg += `<br><br>📞 Para prosseguir, fale agora com um especialista do CNPJ Legal no WhatsApp: 
+                <a href="https://wa.me/5511999999999" target="_blank">Clique aqui</a>`;
       }
 
       chat.innerHTML += `<div class='msg-bot'>${msg}</div>`;
