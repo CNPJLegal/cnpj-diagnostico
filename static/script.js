@@ -12,13 +12,12 @@ function limparMascara(cnpj) {
     return cnpj.replace(/\D/g, '');
 }
 
-// Adiciona mensagens do bot filtrando vazias ou só emoji
 function addMensagemBot(texto) {
     if (!texto) return;
-    const clean = texto.replace(/<[^>]*>?/gm, '') // remove HTML
-                       .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // remove emojis
+    const clean = texto.replace(/<[^>]*>?/gm, '')
+                       .replace(/[\u{1F600}-\u{1F64F}]/gu, '')
                        .trim();
-    if (clean === "") return; // ignora mensagens sem texto real
+    if (clean === "") return;
     document.getElementById('resultado').innerHTML += `<div class="msg-bot">${texto}</div>`;
 }
 
@@ -161,11 +160,82 @@ function enviarWhatsApp() {
     window.open(`https://wa.me/554396015785?text=${msg}`, '_blank');
 }
 
-function baixarConversa() {
-    const chat = document.getElementById('resultado').innerText;
-    const blob = new Blob([chat], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `conversa_cnpj_${Date.now()}.txt`;
-    link.click();
+// Geração de PDF oficial
+async function baixarConversa() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const d = window.dadosCNPJ || {};
+    const dataHora = new Date().toLocaleString('pt-BR');
+
+    // Adiciona logo
+    const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
+    const logoData = await fetch(logoUrl).then(res => res.blob()).then(blob => {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    });
+    doc.addImage(logoData, 'PNG', 14, 10, 40, 15);
+
+    doc.setFontSize(16);
+    doc.text("Relatório Oficial - CNPJ Legal", 60, 18);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${dataHora}`, 60, 24);
+    doc.line(14, 28, 196, 28);
+
+    const linhas = [
+        ["CNPJ", d.cnpj || '—'],
+        ["Responsável", d.responsavel || '—'],
+        ["Status", d.status || '—'],
+        ["Enquadramento", d.situacao_enquadramento || '—'],
+        ["Declaração anual", d.declaracao_anual || '—'],
+        ["Dívida ativa", d.divida_ativa || '—'],
+        ["Valor para regularização", d.valor_regularizacao || '—'],
+        ["CNAE Principal", d.cnae_principal || '—'],
+        ["Natureza Jurídica", d.natureza_juridica || '—'],
+        ["Data de Abertura", d.abertura || '—'],
+        ["Endereço", `${d.logradouro || ''} ${d.numero || ''} - ${d.municipio || ''}/${d.uf || ''}`],
+        ["E-mail", d.email || '—'],
+        ["Telefone", d.telefone || '—'],
+        ["Capital Social", d.capital_social || '—']
+    ];
+
+    doc.autoTable({
+        startY: 34,
+        head: [["Campo", "Informação"]],
+        body: linhas,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 62, 250], textColor: 255 },
+        styles: { fontSize: 10 }
+    });
+
+    let yPos = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.setTextColor(23, 227, 13);
+    doc.text("🚀 Regularize seu CNPJ agora mesmo!", 14, yPos);
+    doc.setTextColor(0, 0, 0);
+    yPos += 8;
+    doc.setFontSize(11);
+    doc.text("Entre em contato com nossa equipe pelo WhatsApp e receba suporte especializado.", 14, yPos);
+
+    const linkWhats = `https://wa.me/554396015785?text=Quero%20regularizar%20meu%20CNPJ`;
+    yPos += 10;
+    doc.setFillColor(23, 227, 13);
+    doc.rect(14, yPos, 80, 10, 'F');
+    doc.setTextColor(0, 0, 0);
+    doc.text("💬 Falar no WhatsApp", 16, yPos + 7);
+    doc.link(14, yPos, 80, 10, { url: linkWhats });
+
+    yPos += 20;
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text("🔗 Instagram: @cnpjlegal", 14, yPos);
+    doc.link(14, yPos - 3, 60, 6, { url: "https://instagram.com/cnpjlegal" });
+    yPos += 5;
+    doc.text("🌐 Site oficial: www.cnpjlegal.com.br", 14, yPos);
+    doc.link(14, yPos - 3, 90, 6, { url: "https://www.cnpjlegal.com.br" });
+
+    doc.save(`CNPJ_Legal_${(d.cnpj || 'relatorio')}.pdf`);
 }
