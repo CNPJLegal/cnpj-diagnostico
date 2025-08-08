@@ -33,7 +33,7 @@ body {
 
 .headline-card {
   position: absolute;
-  bottom: -40px;
+  bottom: -80px; /* desce mais para deixar a imagem visível */
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -77,9 +77,9 @@ body {
 
 .container {
   max-width: 480px;
-  margin: 100px auto 40px;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
+  margin: 150px auto 40px; /* desce mais para destacar a imagem */
+  background: white; /* fundo branco no card de mensagens */
+  color: black;
   padding: 30px;
   border-radius: 20px;
 }
@@ -88,7 +88,7 @@ input, button {
   width: 100%;
   padding: 12px;
   margin-top: 12px;
-  border-radius: 100px;
+  border-radius: 100px; /* totalmente arredondado */
   border: none;
   font-size: 16px;
   outline: none;
@@ -120,7 +120,7 @@ button:hover {
 
 .msg-bot {
   align-self: flex-start;
-  background: #0f3ef9;
+  background: #0f3efa;
   color: white;
   padding: 12px 16px;
   border-radius: 16px;
@@ -129,7 +129,7 @@ button:hover {
 
 .msg-user {
   align-self: flex-end;
-  background: white;
+  background: #eee;
   color: black;
   padding: 12px 16px;
   border-radius: 16px;
@@ -155,7 +155,7 @@ button:hover {
 @media (max-width: 600px) {
   .headline-card {
     padding: 20px;
-    bottom: -20px;
+    bottom: -40px;
   }
   
   .headline-card h1 {
@@ -168,7 +168,7 @@ button:hover {
   }
 
   .container {
-    margin: 80px 20px 30px;
+    margin: 120px 20px 30px;
     padding: 20px;
   }
 }
