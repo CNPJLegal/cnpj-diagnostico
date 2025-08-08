@@ -62,6 +62,12 @@ async function consultarCNPJ() {
         }
 
         iniciarConversa(data);
+
+        // Mostra o botão verde de download com animação
+        const btnDownload = document.getElementById('btnDownload');
+        setTimeout(() => {
+            btnDownload.classList.add('show');
+        }, 300); // Delay para suavizar a entrada
     } catch (err) {
         document.getElementById('loadingSpinner')?.remove();
         addMensagemBot("❌ Erro ao consultar dados. Tente novamente mais tarde.");
@@ -134,16 +140,8 @@ function mostrarBotoesFinais() {
     btnNovo.style.flex = "1";
     btnNovo.onclick = () => location.reload();
 
-    const btnDownload = document.createElement('button');
-    btnDownload.innerText = "Baixar conversa";
-    btnDownload.style.background = "#555";
-    btnDownload.style.color = "#fff";
-    btnDownload.style.flex = "1";
-    btnDownload.onclick = baixarConversa;
-
     div.appendChild(btnWhats);
     div.appendChild(btnNovo);
-    div.appendChild(btnDownload);
     chat.appendChild(div);
 }
 
@@ -168,7 +166,6 @@ async function baixarConversa() {
     const d = window.dadosCNPJ || {};
     const dataHora = new Date().toLocaleString('pt-BR');
 
-    // Adiciona logo
     const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
     const logoData = await fetch(logoUrl).then(res => res.blob()).then(blob => {
         return new Promise(resolve => {
