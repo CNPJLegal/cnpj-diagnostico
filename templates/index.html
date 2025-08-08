@@ -88,7 +88,7 @@
         const data = await res.json();
         document.getElementById('resultado').innerHTML = '';
 
-        // Reexibe o CNPJ no topo do chat antes do resultado
+        // Reexibe o CNPJ no topo do chat
         addMensagem(input.value, 'user');
 
         if (data.erro) {
@@ -154,8 +154,6 @@
       padding: 8px 12px;
       border: none;
       border-radius: 16px;
-      background: #0f3efa;
-      color: white;
       cursor: pointer;
     }
     .opcoes-botoes button:hover {
