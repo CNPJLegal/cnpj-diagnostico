@@ -113,16 +113,16 @@ body {
   z-index: 3; /* garante sobreposição à hero */
 }
 
-/* Botão de download compacto e bem posicionado */
+/* Botão de download compacto no canto superior direito do card branco */
 .btn-download {
   position: absolute;
-  top: -12px; /* sobe um pouco, mas não encosta no card preto */
-  right: -10px; /* encosta na borda direita do card branco */
+  top: 8px;        /* distância do topo do card */
+  right: 8px;      /* distância da borda direita */
   background-color: #555;
   color: #fff;
   border: none;
-  padding: 4px 8px; /* reduz espaço interno */
-  font-size: 11px; /* texto pequeno */
+  padding: 4px 8px;
+  font-size: 11px;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
@@ -132,6 +132,8 @@ body {
   display: none; /* só aparece depois da consulta */
   white-space: nowrap;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  width: auto;    /* impede de esticar horizontalmente */
+  min-width: unset; /* remove largura mínima que possa estar vindo de outros estilos */
 }
 .btn-download:hover {
   background-color: #333;
