@@ -1,262 +1,224 @@
-* { 
-  margin: 0; 
-  padding: 0; 
-  box-sizing: border-box; 
-}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consulta CNPJ - Diagnóstico Completo</title>
+  <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
 
-:root {
-  --fade-height: 120px;   /* altura do fade (curto) */
-  --fade-strength: 0.25;  /* opacidade da foto na base (0 = some, 0.25 = 25% visível) */
-}
+  <!-- HERO -->
+  <section class="hero">
+    <div class="headline-card">
+      <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
+      <p>Identificamos todas as pendências associadas ao seu CNPJ:</p>
+      <div class="card-list">
+        <div class="card-item">Situação Cadastral</div>
+        <div class="card-item">Situação do Enquadramento</div>
+        <div class="card-item">Declaração Anual de Faturamento</div>
+        <div class="card-item">Dívida Ativa</div>
+        <div class="card-item">Demais Débitos</div>
+      </div>
+    </div>
+  </section>
 
-body {
-  font-family: Arial, sans-serif;
-  background-color: #000;
-  color: #fff;
-  line-height: 1.5;
-}
+  <!-- CARD BRANCO + BOTÃO DOWNLOAD -->
+  <div class="container">
+    <button id="btnDownload" class="btn-download" onclick="gerarPDF()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
+      </svg>
+      Baixar Diagnóstico
+    </button>
 
-/* HERO */
-.hero {
-  position: relative;
-  height: 120vh;
-  overflow: hidden;
-  background: #000;
-}
+    <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
+    <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
+    <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
+    <div id="resultado" class="chatbox"></div>
+  </div>
 
-/* Imagem de fundo + degradê */
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: url('https://i.ibb.co/1tV5D6gP/Capa-You-Tube.png') center -180px / cover no-repeat;
-  -webkit-mask-image: linear-gradient(
-    to top,
-    rgba(0,0,0,var(--fade-strength)) 0,
-    rgba(0,0,0,1) var(--fade-height)
-  );
-  mask-image: linear-gradient(
-    to top,
-    rgba(0,0,0,var(--fade-strength)) 0,
-    rgba(0,0,0,1) var(--fade-height)
-  );
-}
+  <script>
+    let ultimoCNPJ = "";
+    let ultimoDiagnostico = {};
 
-/* Fallback degradê */
-@supports not (-webkit-mask-image: linear-gradient(black, white)) {
-  .hero::after {
-    content:"";
-    position:absolute;
-    left:0; right:0; bottom:0;
-    height: var(--fade-height);
-    background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0));
-    pointer-events:none;
-    z-index: 1;
-  }
-}
+    const avatarBot = "https://i.ibb.co/b5h1V8nd/i-cone.png";
+    const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";
 
-/* Card de chamada na hero */
-.headline-card {
-  position: absolute;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(12px);
-  border-radius: 24px;
-  padding: 30px;
-  width: 90%;
-  max-width: 700px;
-  text-align: center;
-}
+    function limparMascara(cnpj) {
+      return cnpj.replace(/\D/g, '');
+    }
 
-.headline-card h1 {
-  font-size: 26px;
-  color: #39c409;
-  margin-bottom: 10px;
-}
+    document.getElementById('cnpjInput').addEventListener('input', function (e) {
+      let v = e.target.value.replace(/\D/g, '').slice(0, 14);
+      if (v.length > 2) v = v.replace(/(\d{2})(\d)/, '$1.$2');
+      if (v.length > 6) v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      if (v.length > 10) v = v.replace(/(\d{3})(\d)/, '$1/$2');
+      if (v.length > 15) v = v.replace(/(\d{4})(\d)/, '$1-$2');
+      e.target.value = v;
+    });
 
-.headline-card p {
-  font-size: 16px;
-  color: #ccc;
-  margin-bottom: 20px;
-}
+    function addMensagem(texto, autor = 'bot') {
+      if (!texto) return;
+      const clean = texto.replace(/<[^>]*>?/gm, '').trim();
+      if (clean === "") return;
 
-.card-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
+      div.innerHTML = `<img src="${autor === 'bot' ? avatarBot : avatarUser}" class="avatar"> <span>${texto}</span>`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-.card-item {
-  background-color: #0f3efa;
-  color: white;
-  padding: 10px 15px;
-  border-radius: 100px;
-  font-size: 14px;
-  font-weight: bold;
-}
+    async function consultarCNPJ() {
+      const input = document.getElementById('cnpjInput');
+      const botao = document.getElementById('consultarBtn');
+      const cnpjLimpo = limparMascara(input.value);
+      const chat = document.getElementById('resultado');
 
-/* Caixa do formulário/chat */
-.container {
-  max-width: 480px;
-  margin: -20px auto 40px; /* SUBIU apenas o card branco */
-  background: #fff;
-  color: #000;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 3; /* garante sobreposição à hero */
-}
+      if (!cnpjLimpo || cnpjLimpo.length !== 14 || !/^\d+$/.test(cnpjLimpo)) {
+        addMensagem("⚠️ Digite um CNPJ válido com 14 números.");
+        return;
+      }
 
-/* Botão de download flutuante acima do card branco */
-.btn-download {
-  position: absolute;
-  top: -18px;          /* sobe pra ficar fora do card */
-  right: 12px;         /* encosta no lado direito do card */
-  background-color: #17e30d; /* verde igual ao Consultar */
-  color: #000;         /* texto preto pra contraste */
-  border: none;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: bold;
-  border-radius: 999px; /* bordas totalmente arredondadas */
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 20;
-  display: none;       /* só aparece após consulta */
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  width: auto;         /* garante que não estique */
-  transition: background-color 0.2s ease-in-out;
-}
+      ultimoCNPJ = input.value;
 
-.btn-download:hover {
-  background-color: #13b80a; /* verde mais escuro no hover */
-}
+      addMensagem(input.value, 'user');
+      input.style.display = 'none';
+      botao.style.display = 'none';
 
-.btn-download svg {
-  width: 14px;
-  height: 14px;
-  fill: #000; /* ícone preto pra combinar com o texto */
-}
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.id = 'loadingSpinner';
+      chat.appendChild(spinner);
 
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-  border-radius: 100px;
-  border: none;
-  font-size: 16px;
-  outline: none;
-}
+      try {
+        const res = await fetch('/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cnpj: cnpjLimpo })
+        });
 
-input { background: #eee; color: #000; }
+        const data = await res.json();
+        document.getElementById('loadingSpinner')?.remove();
 
-button {
-  background-color: #17e30d; /* Verde padrão */
-  color: #000; /* Texto preto */
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-button:hover { background-color: #13b80a; }
+        if (data.erro) {
+          addMensagem(`❌ ${data.erro}`);
+          return;
+        }
 
-/* Chat */
-.chatbox {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+        if (data.responsavel) {
+          data.responsavel = data.responsavel.replace(/\d+/g, '').trim();
+        }
 
-.msg-bot, .msg-user {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  word-wrap: break-word;
-}
+        ultimoDiagnostico = data;
+        iniciarFluxo(data);
 
-.msg-bot {
-  align-self: flex-start;
-  background: #0f3ef9;
-  color: white;
-  padding: 12px 16px;
-  border-radius: 16px;
-  max-width: 90%;
-}
+        document.getElementById("btnDownload").style.display = "flex";
+      } catch (err) {
+        document.getElementById('loadingSpinner')?.remove();
+        addMensagem(`❌ Erro ao consultar: ${err.message}`);
+      }
+    }
 
-.msg-user {
-  align-self: flex-end;
-  background: #f1f1f1;
-  color: black;
-  padding: 12px 16px;
-  border-radius: 16px;
-  max-width: 90%;
-}
+    function iniciarFluxo(data) {
+      addMensagem(`Olá, ${data.responsavel || 'empreendedor(a)'}!`);
 
-.avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+      if (data.status === 'ativo') {
+        addMensagem("✅ Seu CNPJ está ativo na Receita Federal. Possíveis guias mensais pendentes.");
+      } else if (data.status === 'baixado') {
+        addMensagem("⚠️ Seu CNPJ está baixado na Receita Federal. Ainda existem pendências a regularizar.");
+      } else if (data.status === 'inapto') {
+        addMensagem("❌ Seu CNPJ está inapto na Receita Federal devido a pendências.");
+      }
 
-.spinner {
-  border: 4px solid #ccc;
-  border-top: 4px solid #39c409;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
-}
+      addMensagem(`📌 Situação do enquadramento: ${data.situacao_enquadramento}`);
+      addMensagem(`📄 Declaração anual: ${data.declaracao_anual}`);
+      addMensagem(`💰 Dívida ativa: ${data.divida_ativa}`);
+      addMensagem(`💳 Valor estimado para regularização: ${data.valor_regularizacao}`);
 
-@keyframes spin { 
-  0% { transform: rotate(0deg); } 
-  100% { transform: rotate(360deg); } 
-}
+      mostrarOpcoes(["Continuar diagnóstico"], (opcao) => {
+        addMensagem(opcao, 'user');
+        addMensagem("📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...");
+        mostrarBotoesFinais();
+      });
+    }
 
-/* Botões de opção */
-.opcoes-botoes {
-  display: flex;
-  gap: 8px;
-  flex-wrap: nowrap;
-}
-.opcoes-botoes button {
-  flex: 1;
-  margin: 4px 0;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 16px;
-  background: #0f3efa;
-  color: white;
-  cursor: pointer;
-}
-.opcoes-botoes button:hover {
-  background: #0c2ecc;
-}
+    function mostrarOpcoes(opcoes, callback) {
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = 'opcoes-botoes';
+      opcoes.forEach(op => {
+        const btn = document.createElement('button');
+        btn.innerText = op;
+        btn.classList.add("verde");
+        btn.onclick = () => {
+          div.remove();
+          callback(op);
+        };
+        div.appendChild(btn);
+      });
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-/* Botões verdes sempre */
-.opcoes-botoes button.verde {
-  background: #17e30d;
-  color: #000;
-  font-weight: bold;
-}
-.opcoes-botoes button.verde:hover {
-  background: #13b80a;
-}
+    function mostrarBotoesFinais() {
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = 'opcoes-botoes';
 
-/* Responsivo */
-@media (max-width: 600px) {
-  .headline-card { padding: 20px; bottom: 20px; }
-  .headline-card h1 { font-size: 20px; }
-  .card-item { font-size: 12px; padding: 8px 12px; }
-  .container { margin: -10px 20px 30px; padding: 20px; } /* ajuste proporcional no mobile */
-}
+      const mensagemWhats = `Realizei o diagnóstico automático e quero dar continuidade à regularização.\n\nCNPJ: ${ultimoCNPJ}\nNome/Razão Social: ${ultimoDiagnostico.responsavel || 'Não informado'}\nStatus: ${ultimoDiagnostico.status || 'Não informado'}\nEnquadramento: ${ultimoDiagnostico.situacao_enquadramento || 'Não informado'}\nDeclaração anual: ${ultimoDiagnostico.declaracao_anual || 'Não informado'}\nDívida ativa: ${ultimoDiagnostico.divida_ativa || 'Não informado'}\nValor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 'Não informado'}`;
+
+      const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent(mensagemWhats)}`;
+
+      const btnWhats = document.createElement('button');
+      btnWhats.innerText = "Iniciar regularização";
+      btnWhats.classList.add("verde");
+      btnWhats.onclick = () => {
+        window.open(linkWhats, '_blank');
+      };
+
+      const btnNovo = document.createElement('button');
+      btnNovo.innerText = "Consultar novo CNPJ";
+      btnNovo.classList.add("azul");
+      btnNovo.onclick = () => {
+        location.reload();
+      };
+
+      div.appendChild(btnWhats);
+      div.appendChild(btnNovo);
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const logoUrl = "https://i.ibb.co/1Tbdtj0/logo-cnpj-legal.png";
+      doc.addImage(logoUrl, "PNG", 10, 10, 40, 20);
+
+      doc.setFontSize(16);
+      doc.text("Diagnóstico do CNPJ", 105, 20, null, null, "center");
+
+      doc.setFontSize(12);
+      doc.text(`Data e Hora: ${new Date().toLocaleString()}`, 105, 30, null, null, "center");
+      doc.text(`CNPJ Consultado: ${ultimoCNPJ}`, 10, 50);
+
+      let y = 60;
+      document.querySelectorAll("#resultado div").forEach(msg => {
+        const text = msg.innerText.trim();
+        const splitText = doc.splitTextToSize(text, 180);
+        doc.text(splitText, 10, y);
+        y += splitText.length * 6 + 4;
+      });
+
+      doc.save("diagnostico_cnpj.pdf");
+    }
+  </script>
+</body>
+</html>
