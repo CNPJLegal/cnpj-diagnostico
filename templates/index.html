@@ -8,30 +8,9 @@
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/static/style.css" />
-  <style>
-    body { font-family: Arial, sans-serif; background: #f7f9fc; margin: 0; padding: 0; }
-    .hero { background: #004aad; color: white; padding: 30px 20px; text-align: center; }
-    .headline-card { max-width: 800px; margin: auto; }
-    .card-list { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
-    .card-item { background: white; color: #004aad; padding: 10px 20px; margin: 5px; border-radius: 8px; font-weight: bold; }
-    .container { max-width: 500px; margin: 30px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; }
-    input[type=text] { padding: 10px; width: 80%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-    button { padding: 10px 20px; margin-top: 10px; background: #004aad; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
-    button:hover { background: #003080; }
-    .chatbox { text-align: left; margin-top: 20px; }
-    .msg-user, .msg-bot { padding: 10px; border-radius: 8px; margin-bottom: 10px; max-width: 90%; }
-    .msg-user { background: #004aad; color: white; align-self: flex-end; }
-    .msg-bot { background: #f1f1f1; color: black; }
-    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #004aad; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 10px auto; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    img.captcha { display: block; margin: 10px auto; border-radius: 12px; }
-    @media (max-width: 600px) {
-      input[type=text] { width: 100%; }
-      .card-list { flex-direction: column; align-items: center; }
-    }
-  </style>
 </head>
 <body>
+  <!-- Seção Hero com imagem de fundo e degradê -->
   <section class="hero">
     <div class="headline-card">
       <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
@@ -46,6 +25,7 @@
     </div>
   </section>
 
+  <!-- Container principal -->
   <div class="container">
     <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
     <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
@@ -53,6 +33,7 @@
     <div id="resultado" class="chatbox"></div>
   </div>
 
+  <!-- Scripts -->
   <script>
     function limparMascara(cnpj) {
       return cnpj.replace(/\D/g, '');
@@ -88,7 +69,7 @@
           body: JSON.stringify({ cnpj })
         });
 
-        if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
+        if (!res.ok) throw new Error(\`Erro HTTP \${res.status}\`);
 
         const data = await res.json();
         chat.innerHTML = '';
@@ -120,7 +101,7 @@
           body: JSON.stringify({ cnpj, captcha })
         });
 
-        if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
+        if (!res.ok) throw new Error(\`Erro HTTP \${res.status}\`);
 
         const data = await res.json();
         mostrarMensagemFinal(data);
