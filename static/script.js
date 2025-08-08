@@ -64,9 +64,9 @@ async function consultarCNPJ() {
         iniciarConversa(data);
 
         // Mostra o botão verde de download com animação
-        const btnDownload = document.getElementById('btnDownload');
+        const downloadWrapper = document.getElementById('downloadWrapper');
         setTimeout(() => {
-            btnDownload.classList.add('show');
+            downloadWrapper.classList.add('show');
         }, 300); // Delay para suavizar a entrada
     } catch (err) {
         document.getElementById('loadingSpinner')?.remove();
