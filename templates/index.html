@@ -72,7 +72,7 @@
       const cnpj = limparMascara(input.value);
       const chat = document.getElementById('resultado');
 
-      chat.innerHTML = ''; // Limpa antes de exibir nova consulta
+      chat.innerHTML = '';
 
       if (!cnpj || cnpj.length !== 14) {
         chat.innerHTML = `<div class='msg-bot'>⚠️ Digite um CNPJ válido com 14 números.</div>`;
@@ -146,7 +146,7 @@
       }
 
       if (data.valor_regularizacao) {
-        msg += `<br><br>💰 <b>Valor para regularização:</b> R$ ${data.valor_regularizacao.toFixed(2).replace('.', ',')}`;
+        msg += `<br><br>💰 <b>Valor para regularização:</b> ${data.valor_regularizacao}`;
         msg += `<br><br>📞 Para prosseguir, fale agora com um especialista do CNPJ Legal no WhatsApp: 
                 <a href="https://wa.me/5511999999999" target="_blank">Clique aqui</a>`;
       }
