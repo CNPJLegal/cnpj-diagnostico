@@ -113,35 +113,38 @@ body {
   z-index: 3; /* garante sobreposição à hero */
 }
 
-/* Botão de download compacto no canto superior direito do card branco */
+/* Botão de download flutuante acima do card branco */
 .btn-download {
   position: absolute;
-  top: 8px;        /* distância do topo do card */
-  right: 8px;      /* distância da borda direita */
-  background-color: #555;
-  color: #fff;
+  top: -18px;          /* sobe pra ficar fora do card */
+  right: 12px;         /* encosta no lado direito do card */
+  background-color: #17e30d; /* verde igual ao Consultar */
+  color: #000;         /* texto preto pra contraste */
   border: none;
-  padding: 4px 8px;
-  font-size: 11px;
-  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 999px; /* bordas totalmente arredondadas */
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   z-index: 20;
-  display: none; /* só aparece depois da consulta */
+  display: none;       /* só aparece após consulta */
   white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  width: auto;    /* impede de esticar horizontalmente */
-  min-width: unset; /* remove largura mínima que possa estar vindo de outros estilos */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  width: auto;         /* garante que não estique */
+  transition: background-color 0.2s ease-in-out;
 }
+
 .btn-download:hover {
-  background-color: #333;
+  background-color: #13b80a; /* verde mais escuro no hover */
 }
+
 .btn-download svg {
-  width: 12px;
-  height: 12px;
-  fill: #fff;
+  width: 14px;
+  height: 14px;
+  fill: #000; /* ícone preto pra combinar com o texto */
 }
 
 input, button {
