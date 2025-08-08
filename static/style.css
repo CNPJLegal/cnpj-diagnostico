@@ -113,66 +113,63 @@ body {
   z-index: 3;
 }
 
-/* Botão de download separado e centralizado */
-.btn-download {
+/* Botões fixos no canto inferior direito */
+.btn-download,
+.btn-regularizar {
   position: fixed;
-  bottom: -60px; /* escondido inicialmente */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #17e30d;
-  color: #000;
+  right: 20px;
   border: none;
-  padding: 8px 20px; /* largura ajustada */
-  font-size: 14px; /* texto um pouco maior */
+  padding: 10px 18px;
+  font-size: 14px;
   font-weight: bold;
   border-radius: 999px;
   cursor: pointer;
-  display: flex; /* permite alinhar conteúdo */
+  display: flex;
   align-items: center;
-  justify-content: center; /* garante centralização do texto e ícone */
-  gap: 6px; /* espaço entre ícone e texto */
-  white-space: nowrap; /* evita quebra de linha */
+  gap: 6px;
+  white-space: nowrap;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   opacity: 0;
+  transform: translateY(60px);
   transition: all 0.4s ease;
-  z-index: 999; /* mantém acima de tudo */
+  z-index: 999;
 }
 
-.btn-download.show {
-  bottom: 20px; /* aparece suavemente */
+.btn-download.show,
+.btn-regularizar.show {
   opacity: 1;
+  transform: translateY(0);
 }
 
+/* Botão azul - Baixar relatório */
+.btn-download {
+  background-color: #0f3efa;
+  color: #fff;
+  bottom: 20px;
+}
 .btn-download:hover {
+  background-color: #0c2ecc;
+}
+.btn-download svg {
+  width: 16px;
+  height: 16px;
+  fill: #fff;
+}
+
+/* Botão verde - Iniciar regularização */
+.btn-regularizar {
+  background-color: #17e30d;
+  color: #000;
+  bottom: 65px; /* fica acima do download */
+}
+.btn-regularizar:hover {
   background-color: #13b80a;
 }
-
-.btn-download svg {
+.btn-regularizar svg {
   width: 16px;
   height: 16px;
   fill: #000;
 }
-
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-  border-radius: 100px;
-  border: none;
-  font-size: 16px;
-  outline: none;
-}
-
-input { background: #eee; color: #000; }
-
-button {
-  background-color: #17e30d;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-button:hover { background-color: #13b80a; }
 
 /* Chat */
 .chatbox {
