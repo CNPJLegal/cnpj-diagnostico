@@ -14,7 +14,7 @@ body {
 .hero {
   position: relative;
   height: 120vh; /* aumenta área para mostrar mais da imagem */
-  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -80px; /* sobe imagem */
+  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -180px; /* sobe imagem */
   background-size: cover;
   overflow: hidden;
 }
