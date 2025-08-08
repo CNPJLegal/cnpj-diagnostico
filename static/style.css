@@ -25,13 +25,12 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 300px; /* aumentei a altura do degradê para cobrir mais */
+  height: 120px; /* vinheta preta discreta */
   background: linear-gradient(
     to top, 
     rgba(0, 0, 0, 1), 
     rgba(0, 0, 0, 0.85), 
-    rgba(0, 0, 0, 0.6), 
-    rgba(0, 0, 0, 0.3), 
+    rgba(0, 0, 0, 0.5), 
     rgba(0, 0, 0, 0)
   );
   z-index: 1;
@@ -156,12 +155,8 @@ button:hover {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Responsividade */
