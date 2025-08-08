@@ -5,7 +5,7 @@ import os
 import json
 import logging
 
-# Só importa gspread e google-auth se as credenciais existirem
+# Só tenta importar gspread/google-auth se estiverem instalados
 try:
     import gspread
     from google.oauth2.service_account import Credentials
@@ -24,7 +24,7 @@ SCOPES = [
 
 sheet = None
 
-# Tenta conectar ao Google Sheets, se possível
+# Conecta ao Google Sheets somente se as libs e credenciais existirem
 if gspread and Credentials:
     try:
         creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
@@ -42,7 +42,7 @@ else:
     logger.warning("Bibliotecas gspread/google-auth não instaladas. Usando modo simulado.")
 
 def registrar_cnpj(request):
-    # Autenticação via token
+    # Autenticação por token simples
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer ") or auth.split(" ")[1] != TOKEN_SECRETO:
         logger.warning("Tentativa de acesso não autorizada ao registrar CNPJ.")
@@ -54,14 +54,17 @@ def registrar_cnpj(request):
     ip = request.remote_addr
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+    # Validação simples do CNPJ
     if not cnpj.isdigit() or len(cnpj) != 14:
         logger.warning(f"CNPJ inválido recebido para registro: {cnpj}")
         return jsonify({"status": "erro", "mensagem": "CNPJ inválido."}), 400
 
+    # Modo simulado caso Google Sheets não esteja configurado
     if not sheet:
-        logger.info(f"[MODO SIMULADO] Registro de CNPJ: {cnpj}, IP: {ip}, Origem: {origem}")
+        logger.info(f"[MODO SIMULADO] Registro: {timestamp} | CNPJ: {cnpj} | IP: {ip} | Origem: {origem}")
         return jsonify({"status": "sucesso", "mensagem": "Registro simulado. Google Sheets não configurado."})
 
+    # Se planilha estiver disponível, salva nela
     try:
         sheet.append_row([timestamp, cnpj, ip, origem], value_input_option="RAW")
         logger.info(f"CNPJ {cnpj} registrado com sucesso na planilha.")
