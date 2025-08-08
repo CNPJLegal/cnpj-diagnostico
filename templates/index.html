@@ -7,6 +7,54 @@
   <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    .opcoes-botoes {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .opcoes-botoes button {
+      flex: 1;
+      margin: 4px 0;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    /* Verde global */
+    .opcoes-botoes button.verde {
+      background-color: #17e30d;
+      color: #000;
+    }
+    .opcoes-botoes button.verde:hover {
+      background-color: #13b80a;
+    }
+    /* Azul */
+    .opcoes-botoes button.azul {
+      background-color: #0f3efa;
+      color: #fff;
+    }
+    .opcoes-botoes button.azul:hover {
+      background-color: #0c2ecc;
+    }
+    /* Cinza */
+    .opcoes-botoes button.cinza {
+      background-color: #555;
+      color: #fff;
+    }
+    .opcoes-botoes button.cinza:hover {
+      background-color: #333;
+    }
+  </style>
 </head>
 <body>
   <section class="hero">
@@ -50,10 +98,9 @@
       e.target.value = v;
     });
 
-    // Adiciona mensagem filtrando vazias
     function addMensagem(texto, autor = 'bot') {
       if (!texto) return;
-      const clean = texto.replace(/<[^>]*>?/gm, '').trim(); // remove tags HTML e espaços
+      const clean = texto.replace(/<[^>]*>?/gm, '').trim();
       if (clean === "") return;
 
       const chat = document.getElementById('resultado');
@@ -81,7 +128,6 @@
       input.style.display = 'none';
       botao.style.display = 'none';
 
-      // Spinner fora do balão
       const spinner = document.createElement('div');
       spinner.className = 'spinner';
       spinner.id = 'loadingSpinner';
@@ -144,8 +190,7 @@
       opcoes.forEach(op => {
         const btn = document.createElement('button');
         btn.innerText = op;
-        btn.style.background = "#17e30d";
-        btn.style.color = "#000";
+        btn.classList.add("verde");
         btn.onclick = () => {
           div.remove();
           callback(op);
@@ -175,16 +220,14 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
 
       const btnWhats = document.createElement('button');
       btnWhats.innerText = "Iniciar regularização";
-      btnWhats.style.background = "#25D366";
-      btnWhats.style.color = "#fff";
+      btnWhats.classList.add("verde");
       btnWhats.onclick = () => {
         window.open(linkWhats, '_blank');
       };
 
       const btnNovo = document.createElement('button');
       btnNovo.innerText = "Consultar novo CNPJ";
-      btnNovo.style.background = "#0f3efa";
-      btnNovo.style.color = "#fff";
+      btnNovo.classList.add("azul");
       btnNovo.onclick = () => {
         location.reload();
       };
@@ -195,28 +238,5 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
       chat.scrollTop = chat.scrollHeight;
     }
   </script>
-
-  <style>
-    .avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-    .opcoes-botoes {
-      margin-top: 10px;
-    }
-    .opcoes-botoes button {
-      margin: 4px;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 16px;
-      cursor: pointer;
-    }
-    .opcoes-botoes button:hover {
-      opacity: 0.85;
-    }
-  </style>
 </body>
 </html>
