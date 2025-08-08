@@ -50,7 +50,12 @@
       e.target.value = v;
     });
 
+    // Adiciona mensagem filtrando vazias
     function addMensagem(texto, autor = 'bot') {
+      if (!texto) return;
+      const clean = texto.replace(/<[^>]*>?/gm, '').trim(); // remove tags HTML e espaços
+      if (clean === "") return;
+
       const chat = document.getElementById('resultado');
       const div = document.createElement('div');
       div.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
@@ -75,7 +80,12 @@
       addMensagem(input.value, 'user');
       input.style.display = 'none';
       botao.style.display = 'none';
-      addMensagem(`<div class='spinner'></div>`);
+
+      // Spinner fora do balão
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.id = 'loadingSpinner';
+      chat.appendChild(spinner);
 
       try {
         const res = await fetch('/consultar', {
@@ -85,7 +95,7 @@
         });
 
         const data = await res.json();
-        chat.querySelectorAll('.spinner').forEach(s => s.remove());
+        document.getElementById('loadingSpinner')?.remove();
 
         if (data.erro) {
           addMensagem(`❌ ${data.erro}`);
@@ -99,7 +109,7 @@
         ultimoDiagnostico = data;
         iniciarFluxo(data);
       } catch (err) {
-        chat.querySelectorAll('.spinner').forEach(s => s.remove());
+        document.getElementById('loadingSpinner')?.remove();
         addMensagem(`❌ Erro ao consultar: ${err.message}`);
       }
     }
