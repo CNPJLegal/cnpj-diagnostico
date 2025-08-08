@@ -12,7 +12,7 @@ function limparMascara(cnpj) {
     return cnpj.replace(/\D/g, '');
 }
 
-// Função para adicionar mensagens do bot filtrando vazias ou só emoji
+// Adiciona mensagens do bot filtrando vazias ou só emoji
 function addMensagemBot(texto) {
     if (!texto) return;
     const clean = texto.replace(/<[^>]*>?/gm, '') // remove HTML
@@ -37,13 +37,13 @@ async function consultarCNPJ() {
 
     // Mensagem do usuário (só se houver texto)
     if (input.value.trim() !== "") {
-        chat.innerHTML += `<div class="msg-user" style="background:#f1f1f1; padding:10px; border-radius:12px; display:inline-block; margin:5px 0;">${input.value}</div>`;
+        chat.innerHTML += `<div class="msg-user">${input.value}</div>`;
     }
 
     input.style.display = 'none';
     botao.style.display = 'none';
 
-    // Adiciona spinner fora do balão para não deixar bolha vazia
+    // Spinner fora do balão
     const spinner = document.createElement('div');
     spinner.className = 'spinner';
     spinner.id = 'loadingSpinner';
@@ -57,7 +57,6 @@ async function consultarCNPJ() {
         });
 
         const data = await res.json();
-
         document.getElementById('loadingSpinner')?.remove();
 
         if (data.erro) {
@@ -82,7 +81,7 @@ function iniciarConversa(data) {
         addMensagemBot("Olá, empreendedor(a)!");
     }
 
-    // Status cadastral
+    // Status
     if (data.status?.trim()) {
         addMensagemBot(statusMensagem(data.status));
     }
@@ -105,7 +104,7 @@ function iniciarConversa(data) {
     // Botão continuar
     chat.innerHTML += `
         <div class="opcoes-botoes">
-            <button style="background:#17e30d; color:#000; border:none; padding:8px 14px; border-radius:14px; cursor:pointer;" onclick="mostrarBotoesFinais()">Continuar diagnóstico</button>
+            <button class="btn-whats" onclick="mostrarBotoesFinais()">Continuar diagnóstico</button>
         </div>
     `;
 }
@@ -120,7 +119,7 @@ function statusMensagem(status) {
 function mostrarBotoesFinais() {
     const chat = document.getElementById('resultado');
 
-    chat.innerHTML += `<div class="msg-user" style="background:#f1f1f1; padding:10px; border-radius:12px; display:inline-block; margin:5px 0;">Continuar diagnóstico</div>`;
+    chat.innerHTML += `<div class="msg-user">Continuar diagnóstico</div>`;
     addMensagemBot("📋 Diagnóstico finalizado! Você pode iniciar a regularização ou consultar um novo CNPJ.");
 
     const div = document.createElement('div');
@@ -131,8 +130,7 @@ function mostrarBotoesFinais() {
 
     const btnWhats = document.createElement('button');
     btnWhats.innerText = "Iniciar regularização";
-    btnWhats.style.background = "#17e30d";
-    btnWhats.style.color = "#000";
+    btnWhats.classList.add("btn-whats"); // usa a classe do CSS
     btnWhats.style.flex = "1";
     btnWhats.onclick = enviarWhatsApp;
 
