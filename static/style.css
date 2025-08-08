@@ -1,6 +1,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-:root {
+:root{
   --fade-height: 120px;   /* altura do fade (curto) */
   --fade-strength: 0.25;  /* opacidade da foto na base (0 = some, 0.25 = 25% visível) */
 }
@@ -15,7 +15,7 @@ body {
 /* HERO */
 .hero {
   position: relative;
-  height: 120vh; /* preserva altura original */
+  height: 120vh;
   overflow: hidden;
   background: #000;
 }
@@ -40,7 +40,7 @@ body {
 
 /* Fallback degradê */
 @supports not (-webkit-mask-image: linear-gradient(black, white)) {
-  .hero::after {
+  .hero::after{
     content:"";
     position:absolute;
     left:0; right:0; bottom:0;
@@ -99,14 +99,14 @@ body {
 /* Caixa do formulário/chat */
 .container {
   max-width: 480px;
-  margin: -40px auto 40px; /* sobreposição controlada para subir só o branco */
+  margin: -20px auto 40px; /* SUBIU apenas o card branco */
   background: #fff;
   color: #000;
   padding: 30px;
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
   position: relative;
-  z-index: 3;
+  z-index: 3; /* garante sobreposição à hero */
 }
 
 input, button {
@@ -220,5 +220,5 @@ button:hover { background-color: #13b80a; }
   .headline-card { padding: 20px; bottom: 20px; }
   .headline-card h1 { font-size: 20px; }
   .card-item { font-size: 12px; padding: 8px 12px; }
-  .container { margin: -30px 20px 30px; padding: 20px; }
+  .container { margin: -10px 20px 30px; padding: 20px; } /* ajuste proporcional no mobile */
 }
