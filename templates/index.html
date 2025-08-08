@@ -8,23 +8,26 @@
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/static/style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
-    /* Posicionamento correto do botão */
+    /* Botão de download flutuante no canto direito do card */
     .btn-download {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: -35px;
+      right: 0;
       background-color: #555;
       color: #fff;
       border: none;
-      padding: 6px 12px;
+      padding: 6px 10px;
       font-size: 12px;
       border-radius: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 5px;
-      z-index: 10;
+      z-index: 20;
+      display: none;
+      white-space: nowrap;
     }
     .btn-download:hover {
       background-color: #333;
@@ -34,15 +37,60 @@
       height: 14px;
       fill: #fff;
     }
+
     .container {
-      position: relative; /* necessário para posicionar o botão dentro */
+      position: relative;
       max-width: 480px;
-      margin: 30px auto 40px;
+      margin: 80px auto 40px;
       background: #fff;
       color: #000;
       padding: 30px;
       border-radius: 20px;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    .opcoes-botoes {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .opcoes-botoes button {
+      flex: 1;
+      margin: 4px 0;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .opcoes-botoes button.verde {
+      background-color: #17e30d;
+      color: #000;
+    }
+    .opcoes-botoes button.verde:hover {
+      background-color: #13b80a;
+    }
+    .opcoes-botoes button.azul {
+      background-color: #0f3efa;
+      color: #fff;
+    }
+    .opcoes-botoes button.azul:hover {
+      background-color: #0c2ecc;
+    }
+    .opcoes-botoes button.cinza {
+      background-color: #555;
+      color: #fff;
+    }
+    .opcoes-botoes button.cinza:hover {
+      background-color: #333;
     }
   </style>
 </head>
@@ -62,8 +110,8 @@
   </section>
 
   <div class="container">
-    <!-- Botão pequeno no canto direito -->
-    <button class="btn-download" onclick="gerarPDF()">
+    <!-- Botão de Download flutuante -->
+    <button id="btnDownload" class="btn-download" onclick="gerarPDF()">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
         <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
       </svg>
@@ -179,6 +227,9 @@
         addMensagem("📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...");
         mostrarBotoesFinais();
       });
+
+      // Exibir botão de download
+      document.getElementById("btnDownload").style.display = "flex";
     }
 
     function mostrarOpcoes(opcoes, callback) {
@@ -197,81 +248,6 @@
       });
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
-    }
-
-    async function gerarPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const agora = new Date().toLocaleString("pt-BR");
-
-      const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
-      const logoImg = await fetch(logoUrl).then(r => r.blob()).then(blob => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
-      });
-
-      doc.addImage(logoImg, "PNG", 70, 5, 70, 20);
-      doc.setFillColor(23, 227, 13);
-      doc.rect(0, 28, 210, 10, "F");
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Relatório de Diagnóstico - CNPJ Legal", 105, 35, { align: "center" });
-
-      doc.setFontSize(10);
-      doc.setTextColor(50);
-      doc.text(`Gerado em: ${agora}`, 10, 45);
-
-      let y = 55;
-      doc.setFontSize(12);
-      doc.setTextColor(0, 102, 204);
-      doc.text("📋 Conversa", 10, y);
-      y += 6;
-
-      doc.setFontSize(10);
-      doc.setTextColor(0);
-      const mensagens = Array.from(document.querySelectorAll("#resultado div"))
-        .map(div => div.innerText)
-        .filter(txt => txt.trim() !== "");
-
-      mensagens.forEach(msg => {
-        doc.text(`- ${msg}`, 10, y, { maxWidth: 190 });
-        y += 6;
-        if (y > 270) { doc.addPage(); y = 10; }
-      });
-
-      y += 10;
-      doc.setFontSize(12);
-      doc.setTextColor(0, 102, 204);
-      doc.text("📢 Instruções", 10, y);
-      y += 6;
-
-      doc.setFontSize(10);
-      doc.setTextColor(0);
-      doc.text("Para dar continuidade à regularização do seu CNPJ, entre em contato pelo WhatsApp:", 10, y, { maxWidth: 190 });
-      y += 16;
-      doc.setFont("helvetica", "bold");
-      doc.text("Número: (43) 9601-5785", 10, y);
-      doc.setFont("helvetica", "normal");
-      y += 10;
-
-      doc.text("Clique no botão de WhatsApp no nosso site para iniciar o atendimento.", 10, y, { maxWidth: 190 });
-      y += 15;
-
-      doc.setFontSize(12);
-      doc.setTextColor(0, 102, 204);
-      doc.text("🌐 Redes e Contato", 10, y);
-      y += 6;
-
-      doc.setFontSize(10);
-      doc.setTextColor(0);
-      doc.text("Instagram: https://instagram.com/cnpjlegal", 10, y);
-      y += 6;
-      doc.text("Site: https://cnpjlegal.com.br", 10, y);
-
-      doc.save(`diagnostico_cnpj_${ultimoCNPJ.replace(/\D/g, '')}.pdf`);
     }
 
     function mostrarBotoesFinais() {
@@ -309,6 +285,33 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
       div.appendChild(btnNovo);
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+    }
+
+    function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // Logotipo
+      const logoUrl = "https://i.ibb.co/1Tbdtj0/logo-cnpj-legal.png";
+      doc.addImage(logoUrl, "PNG", 10, 10, 40, 20);
+
+      doc.setFontSize(16);
+      doc.text("Diagnóstico do CNPJ", 105, 20, null, null, "center");
+
+      doc.setFontSize(12);
+      doc.text(`Data e Hora: ${new Date().toLocaleString()}`, 105, 30, null, null, "center");
+      doc.text(`CNPJ Consultado: ${ultimoCNPJ}`, 10, 50);
+
+      // Conversa
+      let y = 60;
+      document.querySelectorAll("#resultado div").forEach(msg => {
+        const text = msg.innerText.trim();
+        const splitText = doc.splitTextToSize(text, 180);
+        doc.text(splitText, 10, y);
+        y += splitText.length * 6 + 4;
+      });
+
+      doc.save("diagnostico_cnpj.pdf");
     }
   </script>
 </body>
