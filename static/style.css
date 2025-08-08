@@ -13,7 +13,7 @@ body {
 
 .hero {
   position: relative;
-  height: 80vh;
+  height: 95vh; /* aumentei para mostrar mais a imagem */
   background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center center;
   background-size: cover;
   overflow: hidden;
@@ -25,7 +25,7 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 200px;
+  height: 250px; /* degrade maior */
   background: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
   z-index: 1;
   pointer-events: none;
@@ -33,7 +33,7 @@ body {
 
 .headline-card {
   position: absolute;
-  bottom: -80px; /* desce mais para deixar a imagem visível */
+  bottom: 50px; /* subiu para não sobrepor a imagem de cima */
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -77,18 +77,19 @@ body {
 
 .container {
   max-width: 480px;
-  margin: 150px auto 40px; /* desce mais para destacar a imagem */
-  background: white; /* fundo branco no card de mensagens */
-  color: black;
+  margin: 60px auto 40px; /* trouxe mais para baixo */
+  background: #fff; /* fundo branco para a área de resultado */
+  color: #000;
   padding: 30px;
   border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 input, button {
   width: 100%;
   padding: 12px;
   margin-top: 12px;
-  border-radius: 100px; /* totalmente arredondado */
+  border-radius: 100px;
   border: none;
   font-size: 16px;
   outline: none;
@@ -120,7 +121,7 @@ button:hover {
 
 .msg-bot {
   align-self: flex-start;
-  background: #0f3efa;
+  background: #0f3ef9;
   color: white;
   padding: 12px 16px;
   border-radius: 16px;
@@ -129,7 +130,7 @@ button:hover {
 
 .msg-user {
   align-self: flex-end;
-  background: #eee;
+  background: white;
   color: black;
   padding: 12px 16px;
   border-radius: 16px;
@@ -155,7 +156,7 @@ button:hover {
 @media (max-width: 600px) {
   .headline-card {
     padding: 20px;
-    bottom: -40px;
+    bottom: 20px;
   }
   
   .headline-card h1 {
@@ -168,7 +169,7 @@ button:hover {
   }
 
   .container {
-    margin: 120px 20px 30px;
+    margin: 40px 20px 30px;
     padding: 20px;
   }
 }
