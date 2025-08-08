@@ -19,7 +19,7 @@ body {
   overflow: hidden;
 }
 
-/* Layer de degradê acima da imagem */
+/* Layer de degradê mais curto */
 .hero::before {
   content: '';
   position: absolute;
@@ -30,12 +30,12 @@ body {
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.85) 25%,
-    rgba(0, 0, 0, 0.6) 50%,
-    rgba(0, 0, 0, 0.3) 75%,
-    rgba(0, 0, 0, 0) 100%
+    rgba(0, 0, 0, 0.85) 15%,
+    rgba(0, 0, 0, 0.5) 30%,
+    rgba(0, 0, 0, 0.2) 45%,
+    rgba(0, 0, 0, 0) 60%
   );
-  z-index: 1; /* acima da imagem, abaixo do conteúdo */
+  z-index: 1;
   pointer-events: none;
 }
 
