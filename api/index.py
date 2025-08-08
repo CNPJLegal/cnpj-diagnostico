@@ -10,7 +10,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Ajuste dos paths para rodar dentro da pasta /api
-app = Flask(__name__, static_folder="../static", template_folder="../templates")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "../static")
+TEMPLATES_DIR = os.path.join(BASE_DIR, "../templates")
+
+app = Flask(__name__, static_folder=STATIC_DIR, template_folder=TEMPLATES_DIR)
 
 @app.route('/')
 def index():
@@ -39,18 +43,18 @@ def consultar():
 
         # Validação básica do CNPJ
         if not cnpj or len(cnpj) != 14 or not cnpj.isdigit():
-            logger.warning("CNPJ inválido recebido")
+            logger.warning(f"CNPJ inválido recebido: {cnpj}")
             return jsonify({'erro': 'CNPJ inválido. Informe apenas números, total de 14 dígitos.'}), 400
 
         logger.info(f"Consulta iniciada para CNPJ: {cnpj}")
 
-        # Chama função de scraping/diagnóstico
+        # Chama função de diagnóstico
         resultado = diagnostico_cnpj(cnpj, captcha_resposta)
 
         return jsonify(resultado)
 
     except Exception as e:
-        logger.error(f"Erro na rota /consultar: {str(e)}")
+        logger.exception("Erro na rota /consultar")
         return jsonify({'erro': 'Erro interno no servidor', 'detalhes': str(e)}), 500
 
 @app.route('/registro', methods=['POST'])
@@ -58,12 +62,12 @@ def registro():
     try:
         return registrar_cnpj(request)
     except Exception as e:
-        logger.error(f"Erro na rota /registro: {str(e)}")
+        logger.exception("Erro na rota /registro")
         return jsonify({'erro': 'Erro ao registrar CNPJ', 'detalhes': str(e)}), 500
 
 # Compatibilidade com Vercel
-def handler(request, *args, **kwargs):
-    return app(request.environ, start_response=kwargs.get("start_response"))
+def handler(environ, start_response):
+    return app.wsgi_app(environ, start_response)
 
 # Execução local (para testes fora da Vercel)
 if __name__ == "__main__":
