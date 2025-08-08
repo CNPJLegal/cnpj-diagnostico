@@ -1,11 +1,17 @@
 # registro.py
 from flask import jsonify
 import datetime
-import gspread
 import os
 import json
 import logging
-from google.oauth2.service_account import Credentials
+
+# Só importa gspread e google-auth se as credenciais existirem
+try:
+    import gspread
+    from google.oauth2.service_account import Credentials
+except ImportError:
+    gspread = None
+    Credentials = None
 
 logger = logging.getLogger(__name__)
 
@@ -16,23 +22,27 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive'
 ]
 
-# Autenticação com Google Sheets
-try:
-    creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
-    if not creds_json:
-        raise ValueError("Variável de ambiente GOOGLE_CREDENTIALS_JSON não configurada.")
+sheet = None
 
-    info = json.loads(creds_json)
-    creds = Credentials.from_service_account_info(info, scopes=SCOPES)
-    gc = gspread.authorize(creds)
-    sheet = gc.open(PLANILHA_NOME).sheet1
-    logger.info("Conexão com Google Sheets estabelecida.")
-except Exception as e:
-    logger.error(f"Erro ao inicializar conexão com Google Sheets: {e}")
-    sheet = None
+# Tenta conectar ao Google Sheets, se possível
+if gspread and Credentials:
+    try:
+        creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+        if creds_json:
+            info = json.loads(creds_json)
+            creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+            gc = gspread.authorize(creds)
+            sheet = gc.open(PLANILHA_NOME).sheet1
+            logger.info("Conexão com Google Sheets estabelecida.")
+        else:
+            logger.warning("Variável GOOGLE_CREDENTIALS_JSON não configurada. Usando modo simulado.")
+    except Exception as e:
+        logger.error(f"Erro ao inicializar conexão com Google Sheets: {e}")
+else:
+    logger.warning("Bibliotecas gspread/google-auth não instaladas. Usando modo simulado.")
 
 def registrar_cnpj(request):
-    # Autenticação simples via token
+    # Autenticação via token
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer ") or auth.split(" ")[1] != TOKEN_SECRETO:
         logger.warning("Tentativa de acesso não autorizada ao registrar CNPJ.")
@@ -44,14 +54,13 @@ def registrar_cnpj(request):
     ip = request.remote_addr
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # Validação simples do CNPJ
     if not cnpj.isdigit() or len(cnpj) != 14:
         logger.warning(f"CNPJ inválido recebido para registro: {cnpj}")
         return jsonify({"status": "erro", "mensagem": "CNPJ inválido."}), 400
 
     if not sheet:
-        logger.error("Google Sheets não inicializado. Registro não efetuado.")
-        return jsonify({"status": "erro", "mensagem": "Serviço de registro indisponível."}), 500
+        logger.info(f"[MODO SIMULADO] Registro de CNPJ: {cnpj}, IP: {ip}, Origem: {origem}")
+        return jsonify({"status": "sucesso", "mensagem": "Registro simulado. Google Sheets não configurado."})
 
     try:
         sheet.append_row([timestamp, cnpj, ip, origem], value_input_option="RAW")
