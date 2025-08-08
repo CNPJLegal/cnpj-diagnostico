@@ -13,8 +13,8 @@ body {
 
 .hero {
   position: relative;
-  height: 120vh; /* aumenta área para mostrar mais da imagem */
-  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -180px; /* sobe imagem */
+  height: 120vh;
+  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -180px; /* subimos a imagem */
   background-size: cover;
   overflow: hidden;
 }
@@ -25,12 +25,13 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 250px; /* degradê mais alto */
+  height: 300px; /* aumentei a altura do degradê para cobrir mais */
   background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 1),
-    rgba(0, 0, 0, 0.85),
-    rgba(0, 0, 0, 0.5),
+    to top, 
+    rgba(0, 0, 0, 1), 
+    rgba(0, 0, 0, 0.85), 
+    rgba(0, 0, 0, 0.6), 
+    rgba(0, 0, 0, 0.3), 
     rgba(0, 0, 0, 0)
   );
   z-index: 1;
