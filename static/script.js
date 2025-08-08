@@ -250,57 +250,78 @@ function enviarWhatsApp() {
   window.open(`https://wa.me/554396015785?text=${msg}`, '_blank');
 }
 
-// =========================
-// PDF (Baixar Diagnóstico)
-// =========================
+// Geração de PDF oficial (substitua sua função por esta)
 async function baixarConversa() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  const d = window.dadosCNPJ || {};
-  const dataHora = new Date().toLocaleString('pt-BR');
+  // 1) Carrega uma fonte com suporte a acentos (Roboto)
+  try {
+    const fontUrl = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf"; // Roboto-Regular.ttf
+    const ab = await fetch(fontUrl).then(r => r.arrayBuffer());
+    const b64 = btoa(
+      Array.from(new Uint8Array(ab)).map(b => String.fromCharCode(b)).join("")
+    );
+    doc.addFileToVFS("Roboto-Regular.ttf", b64);
+    doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+    doc.setFont("Roboto", "normal");
+  } catch (e) {
+    // fallback
+    doc.setFont("helvetica", "normal");
+  }
 
-  const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
-  const logoData = await fetch(logoUrl).then(res => res.blob()).then(blob => {
-    return new Promise(resolve => {
+  // helper: remove emojis/char fora da fonte
+  const sanitize = (s = "") =>
+    String(s).replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}]/gu, "");
+
+  const d = window.dadosCNPJ || {};
+  const dataHora = new Date().toLocaleString("pt-BR");
+
+  // 2) Cabeçalho com logo
+  try {
+    const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
+    const logoBlob = await fetch(logoUrl).then(res => res.blob());
+    const logoData = await new Promise(resolve => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(blob);
+      reader.readAsDataURL(logoBlob);
     });
-  });
-  doc.addImage(logoData, 'PNG', 14, 10, 40, 15);
+    doc.addImage(logoData, "PNG", 14, 10, 40, 15);
+  } catch {}
 
   doc.setFontSize(16);
-  doc.text("Relatório Oficial - CNPJ Legal", 60, 18);
+  doc.text(sanitize("Relatório Oficial - CNPJ Legal"), 60, 18);
   doc.setFontSize(10);
-  doc.text(`Gerado em: ${dataHora}`, 60, 24);
+  doc.text(sanitize(`Gerado em: ${dataHora}`), 60, 24);
   doc.line(14, 28, 196, 28);
 
+  // 3) Tabela
   const linhas = [
-    ["CNPJ", d.cnpj || '—'],
-    ["Responsável", d.responsavel || '—'],
-    ["Status", d.status || '—'],
-    ["Enquadramento", d.situacao_enquadramento || '—'],
-    ["Declaração anual", d.declaracao_anual || '—'],
-    ["Dívida ativa", d.divida_ativa || '—'],
-    ["Valor para regularização", d.valor_regularizacao || '—'],
-    ["CNAE Principal", d.cnae_principal || '—'],
-    ["Natureza Jurídica", d.natureza_juridica || '—'],
-    ["Data de Abertura", d.abertura || '—'],
-    ["Endereço", `${d.logradouro || ''} ${d.numero || ''} - ${d.municipio || ''}/${d.uf || ''}`],
-    ["E-mail", d.email || '—'],
-    ["Telefone", d.telefone || '—'],
-    ["Capital Social", d.capital_social || '—']
-  ];
+    ["CNPJ", d.cnpj || "—"],
+    ["Responsável", d.responsavel || "—"],
+    ["Status", d.status || "—"],
+    ["Enquadramento", d.situacao_enquadramento || "—"],
+    ["Declaração anual", d.declaracao_anual || "—"],
+    ["Dívida ativa", d.divida_ativa || "—"],
+    ["Valor para regularização", d.valor_regularizacao || "—"],
+    ["CNAE Principal", d.cnae_principal || "—"],
+    ["Natureza Jurídica", d.natureza_juridica || "—"],
+    ["Data de Abertura", d.abertura || "—"],
+    ["Endereço", `${d.logradouro || ""} ${d.numero || ""} - ${d.municipio || ""}/${d.uf || ""}`.trim()],
+    ["E-mail", d.email || "—"],
+    ["Telefone", d.telefone || "—"],
+    ["Capital Social", d.capital_social || "—"],
+  ].map(([k, v]) => [sanitize(k), sanitize(v)]);
 
   if (doc.autoTable) {
     doc.autoTable({
       startY: 34,
-      head: [["Campo", "Informação"]],
+      head: [["Campo", "Informação"].map(sanitize)],
       body: linhas,
-      theme: 'striped',
+      theme: "striped",
       headStyles: { fillColor: [15, 62, 250], textColor: 255 },
-      styles: { fontSize: 10 }
+      styles: { fontSize: 10, cellPadding: 3 },
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 120 } },
     });
   } else {
     // fallback simples
@@ -312,31 +333,52 @@ async function baixarConversa() {
     });
   }
 
+  // 4) Chamada sem emoji + botão arredondado 100%
   let yPos = (doc.lastAutoTable?.finalY || 120) + 10;
+
   doc.setFontSize(14);
-  doc.setTextColor(23, 227, 13);
-  doc.text("🚀 Regularize seu CNPJ agora mesmo!", 14, yPos);
+  doc.setTextColor(0, 180, 0);
+  doc.text(sanitize("Regularize seu CNPJ agora mesmo!"), 14, yPos);
+
   doc.setTextColor(0, 0, 0);
   yPos += 8;
   doc.setFontSize(11);
-  doc.text("Entre em contato com nossa equipe pelo WhatsApp e receba suporte especializado.", 14, yPos);
+  const desc = sanitize(
+    "Entre em contato com nossa equipe pelo WhatsApp e receba suporte especializado."
+  );
+  doc.text(doc.splitTextToSize(desc, 182), 14, yPos);
 
-  const linkWhats = `https://wa.me/554396015785?text=Quero%20regularizar%20meu%20CNPJ`;
-  yPos += 10;
+  // Botão verde com bordas totalmente arredondadas
+  const btnY = yPos + 12;
+  const btnX = 14;
+  const btnW = 95;
+  const btnH = 12;
+  const radius = btnH / 2; // 100% arredondado
+
   doc.setFillColor(23, 227, 13);
-  doc.rect(14, yPos, 80, 10, 'F');
+  if (doc.roundedRect) {
+    doc.roundedRect(btnX, btnY, btnW, btnH, radius, radius, "F");
+  } else {
+    // fallback: rect normal se o roundedRect não existir
+    doc.rect(btnX, btnY, btnW, btnH, "F");
+  }
   doc.setTextColor(0, 0, 0);
-  doc.text("💬 Falar no WhatsApp", 16, yPos + 7);
-  doc.link(14, yPos, 80, 10, { url: linkWhats });
+  doc.setFontSize(11);
+  doc.text(sanitize("Falar no WhatsApp"), btnX + 8, btnY + 8);
 
-  yPos += 20;
+  const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent(
+    "Quero regularizar meu CNPJ"
+  )}`;
+  doc.link(btnX, btnY, btnW, btnH, { url: linkWhats });
+
+  // 5) Rodapé (sem emojis, com espaçamento ok)
+  let fy = btnY + 22;
   doc.setFontSize(9);
   doc.setTextColor(100);
-  doc.text("🔗 Instagram: @cnpjlegal", 14, yPos);
-  doc.link(14, yPos - 3, 60, 6, { url: "https://instagram.com/cnpjlegal" });
-  yPos += 5;
-  doc.text("🌐 Site oficial: www.cnpjlegal.com.br", 14, yPos);
-  doc.link(14, yPos - 3, 90, 6, { url: "https://www.cnpjlegal.com.br" });
+  doc.text(sanitize("Instagram: @cnpjlegal"), 14, fy);
+  fy += 5;
+  doc.text(sanitize("Site oficial: www.cnpjlegal.com.br"), 14, fy);
 
-  doc.save(`CNPJ_Legal_${(d.cnpj || 'relatorio')}.pdf`);
+  // 6) Salvar
+  doc.save(`CNPJ_Legal_${(d.cnpj || "relatorio")}.pdf`);
 }
