@@ -74,10 +74,7 @@ def registro():
         logger.exception("Erro na rota /registro")
         return jsonify({'erro': 'Erro ao registrar CNPJ', 'detalhes': str(e)}), 500
 
-# Compatibilidade com Vercel
-def handler(environ, start_response):
-    return app.wsgi_app(environ, start_response)
-
+# Exporta o app diretamente para o Vercel (sem handler manual)
 # Execução local (para testes fora da Vercel)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
