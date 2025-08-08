@@ -203,6 +203,15 @@ button:hover { background-color: #13b80a; }
   background: #0c2ecc;
 }
 
+/* Botão verde final corrigido */
+.opcoes-botoes .btn-whats {
+  background: #17e30d !important;
+  color: #000 !important;
+}
+.opcoes-botoes .btn-whats:hover {
+  background: #13b80a !important;
+}
+
 /* Responsivo */
 @media (max-width: 600px) {
   .headline-card { padding: 20px; bottom: 20px; }
