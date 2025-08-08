@@ -39,10 +39,21 @@ body { font-family: Arial, sans-serif; background-color: #000; color: #fff; line
   max-width: 700px;
   text-align: center;
 }
-.headline-card h1 { font-size: 26px; color: #39c409; margin-bottom: 10px; }
-.headline-card p { font-size: 16px; color: #ccc; margin-bottom: 20px; }
+.headline-card h1 {
+  font-size: 26px;
+  color: #39c409;
+  margin-bottom: 10px;
+}
+.headline-card p {
+  font-size: 16px;
+  color: #ccc;
+  margin-bottom: 20px;
+}
 .card-list {
-  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
 }
 .card-item {
   background-color: #0f3efa;
@@ -51,6 +62,41 @@ body { font-family: Arial, sans-serif; background-color: #000; color: #fff; line
   border-radius: 100px;
   font-size: 14px;
   font-weight: bold;
+}
+
+/* BOTÃO DE DOWNLOAD FIXO CENTRALIZADO */
+.btn-download {
+  position: fixed;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #17e30d;
+  color: #000;
+  border: none;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: all 0.5s ease;
+  z-index: 999;
+}
+.btn-download.show {
+  bottom: 20px;
+  opacity: 1;
+}
+.btn-download:hover {
+  background-color: #13b80a;
+}
+.btn-download svg {
+  width: 16px;
+  height: 16px;
+  fill: #000;
 }
 
 /* CONTAINER */
