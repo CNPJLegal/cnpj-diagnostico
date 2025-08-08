@@ -143,6 +143,7 @@ input { background: #eee; color: #000; }
 .btn-regularizar {
   position: fixed;
   right: 20px;
+  left: auto;            /* garante que não fica centralizado por herança antiga */
   border: none;
   padding: 10px 18px;
   font-size: 14px;
@@ -158,43 +159,37 @@ input { background: #eee; color: #000; }
   transform: translateY(60px);
   transition: all 0.4s ease;
   z-index: 999;
+
+  /* 🔒 impede de ocupar 100% da largura */
+  width: auto;
+  min-width: auto;
+  max-width: 90vw; /* segurança em telas muito pequenas */
 }
 
+/* aparecem só quando o JS adiciona .show */
 .btn-download.show,
 .btn-regularizar.show {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Botão azul - Baixar relatório */
+/* Botão azul - Baixar relatório (fica embaixo) */
 .btn-download {
   background-color: #0f3efa;
   color: #fff;
   bottom: 20px;
 }
-.btn-download:hover {
-  background-color: #0c2ecc;
-}
-.btn-download svg {
-  width: 16px;
-  height: 16px;
-  fill: #fff;
-}
+.btn-download:hover { background-color: #0c2ecc; }
+.btn-download svg { width: 16px; height: 16px; fill: #fff; }
 
-/* Botão verde - Iniciar regularização */
+/* Botão verde - Iniciar regularização (fica acima) */
 .btn-regularizar {
   background-color: #17e30d;
   color: #000;
-  bottom: 65px; /* fica acima do download */
+  bottom: 65px; /* acima do download */
 }
-.btn-regularizar:hover {
-  background-color: #13b80a;
-}
-.btn-regularizar svg {
-  width: 16px;
-  height: 16px;
-  fill: #000;
-}
+.btn-regularizar:hover { background-color: #13b80a; }
+.btn-regularizar svg { width: 16px; height: 16px; fill: #000; }
 
 /* Chat */
 .chatbox {
@@ -246,12 +241,12 @@ input { background: #eee; color: #000; }
   margin: 20px auto;
 }
 
-@keyframes spin { 
-  0% { transform: rotate(0deg); } 
-  100% { transform: rotate(360deg); } 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* Botões de opção */
+/* Botões de opção dentro do chat */
 .opcoes-botoes {
   display: flex;
   gap: 8px;
@@ -267,19 +262,15 @@ input { background: #eee; color: #000; }
   color: white;
   cursor: pointer;
 }
-.opcoes-botoes button:hover {
-  background: #0c2ecc;
-}
+.opcoes-botoes button:hover { background: #0c2ecc; }
 
-/* Botões verdes */
+/* Botões verdes dentro do chat */
 .opcoes-botoes button.verde {
   background: #17e30d;
   color: #000;
   font-weight: bold;
 }
-.opcoes-botoes button.verde:hover {
-  background: #13b80a;
-}
+.opcoes-botoes button.verde:hover { background: #13b80a; }
 
 /* Responsivo */
 @media (max-width: 600px) {
