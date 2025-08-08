@@ -66,36 +66,34 @@ body { font-family: Arial, sans-serif; background-color: #000; color: #fff; line
   z-index: 3;
 }
 
-/* BOTÃO DE DOWNLOAD */
+/* BOTÃO DE DOWNLOAD FIXO CENTRALIZADO */
 .btn-download {
-  position: absolute;
-  top: -50px;
-  right: 12px;
+  position: fixed;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: #17e30d;
   color: #000;
   border: none;
-  padding: 6px 14px;
-  font-size: 12px;
+  padding: 8px 20px;
+  font-size: 14px;
   font-weight: bold;
   border-radius: 999px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   opacity: 0;
-  transform: translateY(10px);
-  pointer-events: none;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition: all 0.5s ease;
+  z-index: 999;
 }
 .btn-download.show {
+  bottom: 20px;
   opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
 }
 .btn-download:hover { background-color: #13b80a; }
-.btn-download svg { width: 14px; height: 14px; fill: #000; }
+.btn-download svg { width: 16px; height: 16px; fill: #000; }
 
 input, button {
   width: 100%; padding: 12px; margin-top: 12px; border-radius: 100px; border: none; font-size: 16px; outline: none;
@@ -172,14 +170,15 @@ button:hover { background-color: #13b80a; }
   </div>
 </section>
 
-<div class="container">
-  <button id="btnDownload" class="btn-download" onclick="gerarPDF()">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
-    </svg>
-    Baixar Diagnóstico
-  </button>
+<!-- Botão fixo fora do container -->
+<button id="btnDownload" class="btn-download" onclick="gerarPDF()">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
+  </svg>
+  Baixar Diagnóstico
+</button>
 
+<div class="container">
   <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
   <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18">
   <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
@@ -255,8 +254,7 @@ async function consultarCNPJ() {
     ultimoDiagnostico = data;
     iniciarFluxo(data);
 
-    const btnDownload = document.getElementById("btnDownload");
-    btnDownload.classList.add("show");
+    document.getElementById("btnDownload").classList.add("show");
   } catch (err) {
     document.getElementById('loadingSpinner')?.remove();
     addMensagem(`❌ Erro ao consultar: ${err.message}`);
