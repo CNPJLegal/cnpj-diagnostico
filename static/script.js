@@ -63,19 +63,10 @@ async function consultarCNPJ() {
 
         iniciarConversa(data);
 
-        // Mostra o botão verde de download com animação e estilo corrigido
-        const downloadWrapper = document.getElementById('downloadWrapper');
+        // ✅ Mostra o botão de download imediatamente
         const btnDownload = document.getElementById('btnDownload');
-
         setTimeout(() => {
-            btnDownload.style.display = "inline-flex";
-            btnDownload.style.width = "auto";
-            btnDownload.style.minWidth = "unset";
-            btnDownload.style.maxWidth = "90%";
-            btnDownload.style.padding = "6px 14px";
-            btnDownload.style.justifyContent = "center";
-
-            downloadWrapper.classList.add('show');
+            btnDownload.classList.add('show');
         }, 300);
 
     } catch (err) {
