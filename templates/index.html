@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="/static/style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    /* Ajuste para subir o layout branco */
     .hero {
       position: relative;
       height: 120vh;
@@ -29,49 +28,31 @@
       padding: 30px;
       border-radius: 20px;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      position: relative;
     }
-    .avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-    .opcoes-botoes {
-      margin-top: 10px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: nowrap;
-    }
-    .opcoes-botoes button {
-      flex: 1;
-      margin: 4px 0;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 16px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .opcoes-botoes button.verde {
-      background-color: #17e30d;
-      color: #000;
-    }
-    .opcoes-botoes button.verde:hover {
-      background-color: #13b80a;
-    }
-    .opcoes-botoes button.azul {
-      background-color: #0f3efa;
-      color: #fff;
-    }
-    .opcoes-botoes button.azul:hover {
-      background-color: #0c2ecc;
-    }
-    .opcoes-botoes button.cinza {
+    /* Botão de download no canto */
+    .btn-download {
+      position: absolute;
+      top: -45px;
+      right: 0;
       background-color: #555;
       color: #fff;
+      border: none;
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
-    .opcoes-botoes button.cinza:hover {
+    .btn-download:hover {
       background-color: #333;
+    }
+    .btn-download svg {
+      width: 14px;
+      height: 14px;
+      fill: #fff;
     }
   </style>
 </head>
@@ -91,6 +72,14 @@
   </section>
 
   <div class="container">
+    <!-- Botão de download fora da conversa -->
+    <button class="btn-download" onclick="gerarPDF()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
+      </svg>
+      Baixar Diagnóstico
+    </button>
+
     <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
     <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
     <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
@@ -319,11 +308,6 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
         window.open(linkWhats, '_blank');
       };
 
-      const btnPDF = document.createElement('button');
-      btnPDF.innerText = "Baixar PDF";
-      btnPDF.classList.add("cinza");
-      btnPDF.onclick = gerarPDF;
-
       const btnNovo = document.createElement('button');
       btnNovo.innerText = "Consultar novo CNPJ";
       btnNovo.classList.add("azul");
@@ -332,7 +316,6 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
       };
 
       div.appendChild(btnWhats);
-      div.appendChild(btnPDF);
       div.appendChild(btnNovo);
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
