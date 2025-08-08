@@ -26,7 +26,7 @@
   <div class="container">
     <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
     <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
-    <button onclick="consultarCNPJ()">Consultar</button>
+    <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
     <div id="resultado" class="chatbox"></div>
   </div>
 
@@ -59,6 +59,7 @@
 
     async function consultarCNPJ() {
       const input = document.getElementById('cnpjInput');
+      const botao = document.getElementById('consultarBtn');
       const cnpjLimpo = limparMascara(input.value);
 
       document.getElementById('resultado').innerHTML = '';
@@ -68,7 +69,13 @@
         return;
       }
 
+      // Exibir CNPJ como mensagem do usuário
       addMensagem(input.value, 'user');
+
+      // Esconder campo e botão
+      input.style.display = 'none';
+      botao.style.display = 'none';
+
       addMensagem(`<div class='spinner'></div>`);
 
       try {
@@ -80,6 +87,9 @@
 
         const data = await res.json();
         document.getElementById('resultado').innerHTML = '';
+
+        // Reexibe o CNPJ no topo do chat antes do resultado
+        addMensagem(input.value, 'user');
 
         if (data.erro) {
           addMensagem(`❌ ${data.erro}`);
@@ -118,6 +128,8 @@
       opcoes.forEach(op => {
         const btn = document.createElement('button');
         btn.innerText = op;
+        btn.style.background = "#17e30d"; // botão verde
+        btn.style.color = "#000";
         btn.onclick = () => {
           div.remove();
           callback(op);
@@ -147,7 +159,7 @@
       cursor: pointer;
     }
     .opcoes-botoes button:hover {
-      background: #0c2ecc;
+      opacity: 0.85;
     }
   </style>
 </body>
