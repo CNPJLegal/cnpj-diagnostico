@@ -7,39 +7,28 @@
   <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    /* Hero mantém altura para preservar card preto */
+    /* Ajuste para subir o layout branco */
     .hero {
       position: relative;
       height: 120vh;
       background: #000;
     }
-    /* Card preto fixo na imagem */
     .headline-card {
       position: absolute;
       bottom: 40px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 2;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(12px);
-      border-radius: 24px;
-      padding: 30px;
-      width: 90%;
-      max-width: 700px;
-      text-align: center;
     }
-    /* Card branco mais próximo do preto */
     .container {
       max-width: 480px;
-      margin: -20px auto 40px; /* negativo sobe o card branco */
+      margin: 30px auto 40px;
       background: #fff;
       color: #000;
       padding: 30px;
       border-radius: 20px;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      position: relative;
-      z-index: 3;
     }
     .avatar {
       width: 24px;
@@ -63,7 +52,6 @@
       cursor: pointer;
       font-weight: bold;
     }
-    /* Verde global */
     .opcoes-botoes button.verde {
       background-color: #17e30d;
       color: #000;
@@ -71,7 +59,6 @@
     .opcoes-botoes button.verde:hover {
       background-color: #13b80a;
     }
-    /* Azul */
     .opcoes-botoes button.azul {
       background-color: #0f3efa;
       color: #fff;
@@ -79,7 +66,6 @@
     .opcoes-botoes button.azul:hover {
       background-color: #0c2ecc;
     }
-    /* Cinza */
     .opcoes-botoes button.cinza {
       background-color: #555;
       color: #fff;
@@ -234,6 +220,81 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    async function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const agora = new Date().toLocaleString("pt-BR");
+
+      const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
+      const logoImg = await fetch(logoUrl).then(r => r.blob()).then(blob => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      });
+
+      doc.addImage(logoImg, "PNG", 70, 5, 70, 20);
+      doc.setFillColor(23, 227, 13);
+      doc.rect(0, 28, 210, 10, "F");
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Relatório de Diagnóstico - CNPJ Legal", 105, 35, { align: "center" });
+
+      doc.setFontSize(10);
+      doc.setTextColor(50);
+      doc.text(`Gerado em: ${agora}`, 10, 45);
+
+      let y = 55;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 102, 204);
+      doc.text("📋 Conversa", 10, y);
+      y += 6;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      const mensagens = Array.from(document.querySelectorAll("#resultado div"))
+        .map(div => div.innerText)
+        .filter(txt => txt.trim() !== "");
+
+      mensagens.forEach(msg => {
+        doc.text(`- ${msg}`, 10, y, { maxWidth: 190 });
+        y += 6;
+        if (y > 270) { doc.addPage(); y = 10; }
+      });
+
+      y += 10;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 102, 204);
+      doc.text("📢 Instruções", 10, y);
+      y += 6;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      doc.text("Para dar continuidade à regularização do seu CNPJ, entre em contato pelo WhatsApp:", 10, y, { maxWidth: 190 });
+      y += 16;
+      doc.setFont("helvetica", "bold");
+      doc.text("Número: (43) 9601-5785", 10, y);
+      doc.setFont("helvetica", "normal");
+      y += 10;
+
+      doc.text("Clique no botão de WhatsApp no nosso site para iniciar o atendimento.", 10, y, { maxWidth: 190 });
+      y += 15;
+
+      doc.setFontSize(12);
+      doc.setTextColor(0, 102, 204);
+      doc.text("🌐 Redes e Contato", 10, y);
+      y += 6;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      doc.text("Instagram: https://instagram.com/cnpjlegal", 10, y);
+      y += 6;
+      doc.text("Site: https://cnpjlegal.com.br", 10, y);
+
+      doc.save(`diagnostico_cnpj_${ultimoCNPJ.replace(/\D/g, '')}.pdf`);
+    }
+
     function mostrarBotoesFinais() {
       const chat = document.getElementById('resultado');
       const div = document.createElement('div');
@@ -258,6 +319,11 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
         window.open(linkWhats, '_blank');
       };
 
+      const btnPDF = document.createElement('button');
+      btnPDF.innerText = "Baixar PDF";
+      btnPDF.classList.add("cinza");
+      btnPDF.onclick = gerarPDF;
+
       const btnNovo = document.createElement('button');
       btnNovo.innerText = "Consultar novo CNPJ";
       btnNovo.classList.add("azul");
@@ -266,6 +332,7 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
       };
 
       div.appendChild(btnWhats);
+      div.appendChild(btnPDF);
       div.appendChild(btnNovo);
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
