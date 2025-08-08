@@ -1,42 +1,62 @@
 # consulta.py
 import logging
-import random
+import requests
 
 logger = logging.getLogger(__name__)
 
 def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
     """
-    Realiza um diagnóstico simulado do CNPJ.
-    Compatível com ambientes serverless (Vercel) e sem Selenium.
-
+    Consulta dados reais do CNPJ usando a API pública ReceitaWS
+    (https://receitaws.com.br/v1/cnpj/{cnpj})
+    
     Retorna:
-        - status: "ativo" | "baixado" | "inapto"
-        - situacao_enquadramento: descrição da situação MEI
-        - declaracao_anual: "Entregue" ou "Pendente"
-        - divida_ativa: valor fictício para protótipo
-        - demais_debitos: placeholder (não identificado no protótipo)
-        - valor_regularizacao: valor real ou fictício informado
+        - responsavel: Nome da empresa ou titular (MEI)
+        - status: "ativo", "baixado", "inapto" (conforme Receita)
+        - situacao_enquadramento: MEI regular ou irregular
+        - declaracao_anual: Placeholder (necessita integração PGMEI)
+        - divida_ativa: Placeholder (necessita integração PGFN)
+        - demais_debitos: Placeholder
+        - valor_regularizacao: Placeholder
     """
 
     if not cnpj or len(cnpj) != 14 or not cnpj.isdigit():
         logger.error("CNPJ inválido recebido")
         return {"erro": "CNPJ inválido. Informe apenas números, total de 14 dígitos."}
 
-    logger.info(f"Simulando consulta para CNPJ: {cnpj}")
+    logger.info(f"Consultando dados reais para CNPJ: {cnpj}")
 
-    # Simulação de status
-    status_possiveis = ["ativo", "baixado", "inapto"]
-    status = random.choice(status_possiveis)
+    try:
+        url = f"https://receitaws.com.br/v1/cnpj/{cnpj}"
+        resp = requests.get(url, timeout=15)
+        dados = resp.json()
 
-    # Construindo diagnóstico simulado
-    resultado = {
-        "status": status,
-        "situacao_enquadramento": "MEI regular" if status == "ativo" else "MEI irregular",
-        "declaracao_anual": "Entregue" if random.random() > 0.3 else "Pendente",
-        "divida_ativa": f"R$ {random.randint(0, 5000):,}".replace(",", "."),
-        "demais_debitos": "Não identificado no protótipo",
-        "valor_regularizacao": "R$ 1.200,00"  # Substituir pelo valor real quando disponível
-    }
+        if "status" in dados and dados["status"] == "ERROR":
+            return {"erro": dados.get("message", "Erro ao consultar CNPJ.")}
 
-    logger.info(f"Diagnóstico simulado retornado: {resultado}")
-    return resultado
+        responsavel = dados.get("nome") or dados.get("fantasia") or "Empreendedor(a)"
+        situacao_rf = dados.get("situacao", "").lower()
+
+        # Mapeando status para nosso fluxo
+        if "ativa" in situacao_rf:
+            status = "ativo"
+        elif "baixada" in situacao_rf or "baixado" in situacao_rf:
+            status = "baixado"
+        else:
+            status = "inapto"
+
+        resultado = {
+            "responsavel": responsavel,
+            "status": status,
+            "situacao_enquadramento": "MEI regular" if status == "ativo" else "MEI irregular",
+            "declaracao_anual": "Desconhecido (necessária integração PGMEI)",
+            "divida_ativa": "Desconhecido (necessária integração PGFN)",
+            "demais_debitos": "Não identificado (protótipo)",
+            "valor_regularizacao": "A calcular com dados reais"
+        }
+
+        logger.info(f"Diagnóstico real retornado: {resultado}")
+        return resultado
+
+    except Exception as e:
+        logger.exception("Erro ao consultar API de CNPJ")
+        return {"erro": f"Erro ao consultar CNPJ: {str(e)}"}
