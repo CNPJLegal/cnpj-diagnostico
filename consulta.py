@@ -13,13 +13,6 @@ def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
         logger.error("CNPJ inválido recebido")
         return {
             "erro": "CNPJ inválido. Informe apenas números, total de 14 dígitos.",
-            "responsavel": None,
-            "status": None,
-            "situacao_enquadramento": None,
-            "declaracao_anual": None,
-            "divida_ativa": None,
-            "demais_debitos": None,
-            "valor_regularizacao": None
         }
 
     logger.info(f"Consultando dados reais para CNPJ: {cnpj}")
@@ -38,13 +31,6 @@ def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
         if dados.get("status") == "ERROR":
             return {
                 "erro": dados.get("message", "Erro ao consultar CNPJ."),
-                "responsavel": None,
-                "status": None,
-                "situacao_enquadramento": None,
-                "declaracao_anual": None,
-                "divida_ativa": None,
-                "demais_debitos": None,
-                "valor_regularizacao": None
             }
 
         # Nome do responsável / empresa
@@ -70,7 +56,19 @@ def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
             "declaracao_anual": "Desconhecido (necessária integração PGMEI)",
             "divida_ativa": "Desconhecido (necessária integração PGFN)",
             "demais_debitos": "Não identificado (protótipo)",
-            "valor_regularizacao": "A calcular com dados reais"
+            "valor_regularizacao": "A calcular com dados reais",
+            # Campos extras
+            "cnpj": dados.get("cnpj"),
+            "abertura": dados.get("abertura"),
+            "cnae_principal": dados.get("atividade_principal", [{}])[0].get("text"),
+            "natureza_juridica": dados.get("natureza_juridica"),
+            "logradouro": dados.get("logradouro"),
+            "numero": dados.get("numero"),
+            "municipio": dados.get("municipio"),
+            "uf": dados.get("uf"),
+            "email": dados.get("email"),
+            "telefone": dados.get("telefone"),
+            "capital_social": dados.get("capital_social")
         }
 
         logger.info(f"Diagnóstico real retornado: {resultado}")
@@ -80,11 +78,4 @@ def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
         logger.exception("Erro ao consultar API de CNPJ")
         return {
             "erro": f"Erro ao consultar CNPJ: {str(e)}",
-            "responsavel": None,
-            "status": None,
-            "situacao_enquadramento": None,
-            "declaracao_anual": None,
-            "divida_ativa": None,
-            "demais_debitos": None,
-            "valor_regularizacao": None
         }
