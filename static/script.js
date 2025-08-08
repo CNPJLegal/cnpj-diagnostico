@@ -35,7 +35,6 @@ async function consultarCNPJ() {
         return;
     }
 
-    // Mensagem do usuário (só se houver texto)
     if (input.value.trim() !== "") {
         chat.innerHTML += `<div class="msg-user">${input.value}</div>`;
     }
@@ -43,7 +42,6 @@ async function consultarCNPJ() {
     input.style.display = 'none';
     botao.style.display = 'none';
 
-    // Spinner fora do balão
     const spinner = document.createElement('div');
     spinner.className = 'spinner';
     spinner.id = 'loadingSpinner';
@@ -74,19 +72,16 @@ async function consultarCNPJ() {
 function iniciarConversa(data) {
     const chat = document.getElementById('resultado');
 
-    // Saudação
     if (data.responsavel?.trim()) {
         addMensagemBot(`Olá, ${data.responsavel}!`);
     } else {
         addMensagemBot("Olá, empreendedor(a)!");
     }
 
-    // Status
     if (data.status?.trim()) {
         addMensagemBot(statusMensagem(data.status));
     }
 
-    // Campos adicionais
     if (data.situacao_enquadramento?.trim()) addMensagemBot(`📌 Situação do enquadramento: ${data.situacao_enquadramento}`);
     if (data.declaracao_anual?.trim()) addMensagemBot(`📄 Declaração Anual: ${data.declaracao_anual}`);
     if (data.divida_ativa?.trim()) addMensagemBot(`💰 Dívida ativa: ${data.divida_ativa}`);
@@ -101,7 +96,6 @@ function iniciarConversa(data) {
 
     window.dadosCNPJ = data;
 
-    // Botão continuar
     chat.innerHTML += `
         <div class="opcoes-botoes">
             <button class="btn-whats" onclick="mostrarBotoesFinais()">Continuar diagnóstico</button>
@@ -130,7 +124,7 @@ function mostrarBotoesFinais() {
 
     const btnWhats = document.createElement('button');
     btnWhats.innerText = "Iniciar regularização";
-    btnWhats.classList.add("btn-whats"); // usa a classe do CSS
+    btnWhats.classList.add("btn-whats");
     btnWhats.style.flex = "1";
     btnWhats.onclick = enviarWhatsApp;
 
