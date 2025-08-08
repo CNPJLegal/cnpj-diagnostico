@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
     """
     Realiza um diagnóstico simulado do CNPJ.
-    Esta versão é compatível com ambientes serverless (Vercel) e
-    não utiliza Selenium.
+    Compatível com ambientes serverless (Vercel) e sem Selenium.
+
     Retorna:
         - status: "ativo" | "baixado" | "inapto"
         - situacao_enquadramento: descrição da situação MEI
@@ -33,9 +33,9 @@ def diagnostico_cnpj(cnpj: str, captcha_resposta: str = None) -> dict:
         "status": status,
         "situacao_enquadramento": "MEI regular" if status == "ativo" else "MEI irregular",
         "declaracao_anual": "Entregue" if random.random() > 0.3 else "Pendente",
-        "divida_ativa": f"R$ {random.randint(0, 5000)},00",
+        "divida_ativa": f"R$ {random.randint(0, 5000):,}".replace(",", "."),
         "demais_debitos": "Não identificado no protótipo",
-        "valor_regularizacao": "R$ 1.200,00"  # Esse pode ser substituído pelo valor real quando disponível
+        "valor_regularizacao": "R$ 1.200,00"  # Substituir pelo valor real quando disponível
     }
 
     logger.info(f"Diagnóstico simulado retornado: {resultado}")
