@@ -14,17 +14,25 @@ function limparMascara(cnpj) {
 
 async function consultarCNPJ() {
     const input = document.getElementById('cnpjInput');
+    const botao = document.getElementById('consultarBtn');
     const cnpj = limparMascara(input.value);
     const chat = document.getElementById('resultado');
 
     chat.innerHTML = '';
 
     if (!cnpj || cnpj.length !== 14) {
-        chat.innerHTML = `<div class="msg-bot">⚠️ Digite um CNPJ válido com 14 números.</div>`;
+        chat.innerHTML += `<div class="msg-bot">⚠️ Digite um CNPJ válido com 14 números.</div>`;
         return;
     }
 
-    chat.innerHTML = `<div class="msg-user">${input.value}</div><div class="spinner"></div>`;
+    // Exibir CNPJ como mensagem do usuário
+    chat.innerHTML += `<div class="msg-user">${input.value}</div>`;
+
+    // Esconder campo e botão
+    input.style.display = 'none';
+    botao.style.display = 'none';
+
+    chat.innerHTML += `<div class="spinner"></div>`;
 
     try {
         const res = await fetch('/consultar', {
@@ -34,26 +42,26 @@ async function consultarCNPJ() {
         });
 
         const data = await res.json();
-        chat.innerHTML = '';
+        chat.innerHTML = `<div class="msg-user">${input.value}</div>`; // mantém CNPJ no topo
 
         if (data.erro) {
-            chat.innerHTML = `<div class="msg-bot">❌ ${data.erro}</div>`;
+            chat.innerHTML += `<div class="msg-bot">❌ ${data.erro}</div>`;
             return;
         }
 
         iniciarConversa(data);
     } catch (err) {
-        chat.innerHTML = `<div class="msg-bot">❌ Erro ao consultar: ${err.message}</div>`;
+        chat.innerHTML += `<div class="msg-bot">❌ Erro ao consultar: ${err.message}</div>`;
     }
 }
 
 function iniciarConversa(data) {
     const chat = document.getElementById('resultado');
 
-    // 1 - Saudação
+    // Saudação
     chat.innerHTML += `<div class="msg-bot">Olá, ${data.responsavel || 'empreendedor(a)'}!</div>`;
 
-    // 2 - Diagnóstico da situação cadastral
+    // Diagnóstico
     if (data.status === 'ativo') {
         chat.innerHTML += `<div class="msg-bot">Confirmamos que seu CNPJ está ativo na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais pendentes.</div>`;
     } else if (data.status === 'baixado') {
@@ -62,23 +70,21 @@ function iniciarConversa(data) {
         chat.innerHTML += `<div class="msg-bot">Seu CNPJ está inapto perante a Receita Federal devido a pendências existentes.</div>`;
     }
 
-    // 3 - Diagnóstico dívida ativa
+    // Dívida ativa
     if (data.divida_ativa) {
         chat.innerHTML += `<div class="msg-bot">Devido ao não pagamento das taxas mensais do seu CNPJ, a dívida foi transferida para o seu CPF, tornando-se uma dívida ativa com a Receita Federal.</div>`;
     }
 
-    // 4 - Próxima etapa — botão de continuar
-    chat.innerHTML += `<div class="msg-bot">Deseja saber como regularizar?</div>`;
+    // Botão verde de continuar
     chat.innerHTML += `<div class="msg-bot">
-        <button onclick="mostrarProposta()">Sim</button>
-        <button onclick="encerrar()">Não</button>
+        <button style="background:#17e30d; color:#000; border:none; padding:8px 14px; border-radius:14px; cursor:pointer;" onclick="mostrarProposta()">Continuar diagnóstico</button>
     </div>`;
 }
 
 function mostrarProposta() {
     const chat = document.getElementById('resultado');
-    chat.innerHTML += `<div class="msg-user">Sim</div>`;
-    chat.innerHTML += `<div class="msg-bot">Podemos conseguir até 50% de desconto e parcelamento em até 60 vezes. O investimento inicial é de R$ 349. Você quer prosseguir?</div>`;
+    chat.innerHTML += `<div class="msg-user">Continuar diagnóstico</div>`;
+    chat.innerHTML += `<div class="msg-bot">📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...</div>`;
 }
 
 function encerrar() {
