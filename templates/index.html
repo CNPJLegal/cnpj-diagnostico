@@ -6,7 +6,124 @@
 <title>Consulta CNPJ - Diagnóstico Completo</title>
 <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-<link rel="stylesheet" href="style.css">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background-color: #000; color: #fff; line-height: 1.5; }
+
+/* HERO */
+.hero {
+  position: relative;
+  height: 120vh;
+  overflow: hidden;
+  background: #000;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url('https://i.ibb.co/1tV5D6gP/Capa-You-Tube.png') center -180px / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.25) 0, rgba(0,0,0,1) 120px);
+  mask-image: linear-gradient(to top, rgba(0,0,0,0.25) 0, rgba(0,0,0,1) 120px);
+}
+.headline-card {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 30px;
+  width: 90%;
+  max-width: 700px;
+  text-align: center;
+}
+.headline-card h1 { font-size: 26px; color: #39c409; margin-bottom: 10px; }
+.headline-card p { font-size: 16px; color: #ccc; margin-bottom: 20px; }
+.card-list {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+}
+.card-item {
+  background-color: #0f3efa;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* CONTAINER */
+.container {
+  max-width: 480px;
+  margin: -20px auto 40px;
+  background: #fff;
+  color: #000;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 3;
+}
+
+input, button {
+  width: 100%; padding: 12px; margin-top: 12px; border-radius: 100px; border: none; font-size: 16px; outline: none;
+}
+input { background: #eee; color: #000; }
+button {
+  background-color: #17e30d; color: #000; font-weight: bold; cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+button:hover { background-color: #13b80a; }
+
+/* CHAT */
+.chatbox { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.msg-bot, .msg-user {
+  display: flex; align-items: flex-start; gap: 8px; word-wrap: break-word;
+}
+.msg-bot {
+  align-self: flex-start;
+  background: #0f3ef9;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 16px;
+  max-width: 90%;
+}
+.msg-user {
+  align-self: flex-end;
+  background: #f1f1f1;
+  color: black;
+  padding: 12px 16px;
+  border-radius: 16px;
+  max-width: 90%;
+}
+.avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
+.spinner {
+  border: 4px solid #ccc;
+  border-top: 4px solid #39c409;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* BOTÕES DE OPÇÃO */
+.opcoes-botoes { display: flex; gap: 8px; flex-wrap: nowrap; }
+.opcoes-botoes button { flex: 1; margin: 4px 0; padding: 8px 12px; border: none; border-radius: 16px; background: #0f3efa; color: white; cursor: pointer; }
+.opcoes-botoes button:hover { background: #0c2ecc; }
+.opcoes-botoes button.verde { background: #17e30d; color: #000; font-weight: bold; }
+.opcoes-botoes button.verde:hover { background: #13b80a; }
+
+/* RESPONSIVO */
+@media (max-width: 600px) {
+  .headline-card { padding: 20px; bottom: 20px; }
+  .headline-card h1 { font-size: 20px; }
+  .card-item { font-size: 12px; padding: 8px 12px; }
+  .container { margin: -10px 20px 30px; padding: 20px; }
+}
+</style>
 </head>
 <body>
 
@@ -23,14 +140,6 @@
     </div>
   </div>
 </section>
-
-<!-- Botão fixo fora do container -->
-<button id="btnDownload" class="btn-download" onclick="gerarPDF()">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
-  </svg>
-  Baixar Diagnóstico
-</button>
 
 <div class="container">
   <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
@@ -107,8 +216,6 @@ async function consultarCNPJ() {
 
     ultimoDiagnostico = data;
     iniciarFluxo(data);
-
-    document.getElementById("btnDownload").classList.add("show");
   } catch (err) {
     document.getElementById('loadingSpinner')?.remove();
     addMensagem(`❌ Erro ao consultar: ${err.message}`);
@@ -179,30 +286,6 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
   div.appendChild(btnNovo);
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
-}
-
-function gerarPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  const logoUrl = "https://i.ibb.co/1Tbdtj0/logo-cnpj-legal.png";
-  doc.addImage(logoUrl, "PNG", 10, 10, 40, 20);
-  doc.setFontSize(16);
-  doc.text("Diagnóstico do CNPJ", 105, 20, null, null, "center");
-
-  doc.setFontSize(12);
-  doc.text(`Data e Hora: ${new Date().toLocaleString()}`, 105, 30, null, null, "center");
-  doc.text(`CNPJ Consultado: ${ultimoCNPJ}`, 10, 50);
-
-  let y = 60;
-  document.querySelectorAll("#resultado div").forEach(msg => {
-    const text = msg.innerText.trim();
-    const splitText = doc.splitTextToSize(text, 180);
-    doc.text(splitText, 10, y);
-    y += splitText.length * 6 + 4;
-  });
-
-  doc.save("diagnostico_cnpj.pdf");
 }
 </script>
 </body>
