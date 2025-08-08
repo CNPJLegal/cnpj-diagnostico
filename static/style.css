@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* ajuste rápido da altura do degradê */
+  --fade-height: 120px; /* experimente 80px ou 60px se quiser mais curto */
+}
+
 body {
   font-family: Arial, sans-serif;
   background-color: #000;
@@ -14,27 +19,21 @@ body {
 .hero {
   position: relative;
   height: 120vh;
-  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -180px;
-  background-size: cover;
+
+  /* ✅ Degradê curto aplicado como 1ª camada + imagem como 2ª camada */
+  background-image:
+    linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0)),
+    url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png');
+
+  /* tamanho e posição independentes por camada */
+  background-size: 100% var(--fade-height), cover;
+  background-repeat: no-repeat, no-repeat;
+  background-position: bottom, center -180px;
+
   overflow: hidden;
 }
 
-/* Degradê forte e curto de baixo pra cima */
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 120px; /* altura curta do degradê */
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 1) 0%,   /* preto total na base */
-    rgba(0, 0, 0, 0) 100%  /* transparente no topo */
-  );
-  z-index: 5;
-  pointer-events: none;
-}
+/* removido o ::after — não é mais necessário */
 
 .headline-card {
   position: absolute;
@@ -154,12 +153,8 @@ button:hover {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Responsividade */
