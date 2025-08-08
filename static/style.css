@@ -13,8 +13,8 @@ body {
 
 .hero {
   position: relative;
-  height: 95vh; /* aumentei para mostrar mais a imagem */
-  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center center;
+  height: 95vh; /* aumenta área para mostrar mais da imagem */
+  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -80px; /* sobe imagem */
   background-size: cover;
   overflow: hidden;
 }
@@ -25,15 +25,21 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 250px; /* degrade maior */
-  background: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+  height: 250px; /* degradê mais alto */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1),
+    rgba(0, 0, 0, 0.85),
+    rgba(0, 0, 0, 0.5),
+    rgba(0, 0, 0, 0)
+  );
   z-index: 1;
   pointer-events: none;
 }
 
 .headline-card {
   position: absolute;
-  bottom: 50px; /* subiu para não sobrepor a imagem de cima */
+  bottom: 40px; /* mais baixo para não cobrir o rosto */
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -77,15 +83,16 @@ body {
 
 .container {
   max-width: 480px;
-  margin: 60px auto 40px; /* trouxe mais para baixo */
-  background: #fff; /* fundo branco para a área de resultado */
+  margin: 80px auto 40px; /* mais afastado do card */
+  background: #fff; /* fundo branco */
   color: #000;
   padding: 30px;
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
-input, button {
+input,
+button {
   width: 100%;
   padding: 12px;
   margin-top: 12px;
@@ -148,8 +155,12 @@ button:hover {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsividade */
@@ -158,7 +169,7 @@ button:hover {
     padding: 20px;
     bottom: 20px;
   }
-  
+
   .headline-card h1 {
     font-size: 20px;
   }
@@ -169,7 +180,7 @@ button:hover {
   }
 
   .container {
-    margin: 40px 20px 30px;
+    margin: 50px 20px 30px;
     padding: 20px;
   }
 }
