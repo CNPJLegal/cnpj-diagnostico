@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
@@ -13,12 +12,7 @@
 body { font-family: Arial, sans-serif; background-color: #000; color: #fff; line-height: 1.5; }
 
 /* HERO */
-.hero {
-  position: relative;
-  height: 120vh;
-  overflow: hidden;
-  background: #000;
-}
+.hero { position: relative; height: 120vh; overflow: hidden; background: #000; }
 .hero::before {
   content: "";
   position: absolute;
@@ -40,65 +34,10 @@ body { font-family: Arial, sans-serif; background-color: #000; color: #fff; line
   max-width: 700px;
   text-align: center;
 }
-.headline-card h1 {
-  font-size: 26px;
-  color: #39c409;
-  margin-bottom: 10px;
-}
-.headline-card p {
-  font-size: 16px;
-  color: #ccc;
-  margin-bottom: 20px;
-}
-.card-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-}
-.card-item {
-  background-color: #0f3efa;
-  color: white;
-  padding: 10px 15px;
-  border-radius: 100px;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-/* BOTÃO DE DOWNLOAD FIXO CENTRALIZADO */
-.btn-download {
-  position: fixed;
-  bottom: -60px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #17e30d;
-  color: #000;
-  border: none;
-  padding: 8px 20px;
-  font-size: 14px;
-  font-weight: bold;
-  border-radius: 999px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  opacity: 0;
-  transition: all 0.5s ease;
-  z-index: 999;
-}
-.btn-download.show {
-  bottom: 20px;
-  opacity: 1;
-}
-.btn-download:hover {
-  background-color: #13b80a;
-}
-.btn-download svg {
-  width: 16px;
-  height: 16px;
-  fill: #000;
-}
+.headline-card h1 { font-size: 26px; color: #39c409; margin-bottom: 10px; }
+.headline-card p { font-size: 16px; color: #ccc; margin-bottom: 20px; }
+.card-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.card-item { background-color: #0f3efa; color: white; padding: 10px 15px; border-radius: 100px; font-size: 14px; font-weight: bold; }
 
 /* CONTAINER */
 .container {
@@ -112,51 +51,55 @@ body { font-family: Arial, sans-serif; background-color: #000; color: #fff; line
   position: relative;
   z-index: 3;
 }
-
 input, button {
   width: 100%; padding: 12px; margin-top: 12px; border-radius: 100px; border: none; font-size: 16px; outline: none;
 }
 input { background: #eee; color: #000; }
-button {
-  background-color: #17e30d; color: #000; font-weight: bold; cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
+button { background-color: #17e30d; color: #000; font-weight: bold; cursor: pointer; transition: background-color 0.2s ease-in-out; }
 button:hover { background-color: #13b80a; }
 
 /* CHAT */
 .chatbox { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-.msg-bot, .msg-user {
-  display: flex; align-items: flex-start; gap: 8px; word-wrap: break-word;
-}
-.msg-bot {
-  align-self: flex-start;
-  background: #0f3ef9;
-  color: white;
-  padding: 12px 16px;
-  border-radius: 16px;
-  max-width: 90%;
-}
-.msg-user {
-  align-self: flex-end;
-  background: #f1f1f1;
-  color: black;
-  padding: 12px 16px;
-  border-radius: 16px;
-  max-width: 90%;
-}
+.msg-bot, .msg-user { display: flex; align-items: flex-start; gap: 8px; word-wrap: break-word; }
+.msg-bot { align-self: flex-start; background: #0f3ef9; color: white; padding: 12px 16px; border-radius: 16px; max-width: 90%; }
+.msg-user { align-self: flex-end; background: #f1f1f1; color: black; padding: 12px 16px; border-radius: 16px; max-width: 90%; }
 .avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
-.spinner {
-  border: 4px solid #ccc;
-  border-top: 4px solid #39c409;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
-}
+.spinner { border: 4px solid #ccc; border-top: 4px solid #39c409; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* BOTÕES DE OPÇÃO */
+/* BOTÕES FIXOS NO CANTO INFERIOR DIREITO */
+.btn-download, .btn-regularizar {
+  position: fixed;
+  right: 20px;
+  border: none;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: translateY(60px);
+  transition: all 0.4s ease;
+  z-index: 999;
+}
+.btn-download.show, .btn-regularizar.show { opacity: 1; transform: translateY(0); }
+
+/* Botão azul - Baixar relatório */
+.btn-download { background-color: #0f3efa; color: #fff; bottom: 20px; }
+.btn-download:hover { background-color: #0c2ecc; }
+.btn-download svg { width: 16px; height: 16px; fill: #fff; }
+
+/* Botão verde - Iniciar regularização */
+.btn-regularizar { background-color: #17e30d; color: #000; bottom: 65px; }
+.btn-regularizar:hover { background-color: #13b80a; }
+.btn-regularizar svg { width: 16px; height: 16px; fill: #000; }
+
+/* BOTÕES DE OPÇÃO NO CHAT */
 .opcoes-botoes { display: flex; gap: 8px; flex-wrap: nowrap; }
 .opcoes-botoes button { flex: 1; margin: 4px 0; padding: 8px 12px; border: none; border-radius: 16px; background: #0f3efa; color: white; cursor: pointer; }
 .opcoes-botoes button:hover { background: #0c2ecc; }
@@ -189,161 +132,21 @@ button:hover { background-color: #13b80a; }
 </section>
 
 <div class="container">
-  <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
   <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18">
   <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
   <div id="resultado" class="chatbox"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-let ultimoCNPJ = "";
-let ultimoDiagnostico = {};
-const avatarBot = "https://i.ibb.co/b5h1V8nd/i-cone.png";
-const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="/static/script.js"></script>
 
-function limparMascara(cnpj) { return cnpj.replace(/\D/g, ''); }
-
-document.getElementById('cnpjInput').addEventListener('input', function (e) {
-  let v = e.target.value.replace(/\D/g, '').slice(0, 14);
-  if (v.length > 2) v = v.replace(/(\d{2})(\d)/, '$1.$2');
-  if (v.length > 6) v = v.replace(/(\d{3})(\d)/, '$1.$2');
-  if (v.length > 10) v = v.replace(/(\d{3})(\d)/, '$1/$2');
-  if (v.length > 15) v = v.replace(/(\d{4})(\d)/, '$1-$2');
-  e.target.value = v;
-});
-
-function addMensagem(texto, autor = 'bot') {
-  if (!texto) return;
-  const clean = texto.replace(/<[^>]*>?/gm, '').trim();
-  if (clean === "") return;
-  const chat = document.getElementById('resultado');
-  const div = document.createElement('div');
-  div.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
-  div.innerHTML = `<img src="${autor === 'bot' ? avatarBot : avatarUser}" class="avatar"> <span>${texto}</span>`;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-async function consultarCNPJ() {
-  const input = document.getElementById('cnpjInput');
-  const botao = document.getElementById('consultarBtn');
-  const cnpjLimpo = limparMascara(input.value);
-  const chat = document.getElementById('resultado');
-
-  if (!cnpjLimpo || cnpjLimpo.length !== 14) {
-    addMensagem("⚠️ Digite um CNPJ válido com 14 números.");
-    return;
-  }
-
-  ultimoCNPJ = input.value;
-  addMensagem(input.value, 'user');
-  input.style.display = 'none';
-  botao.style.display = 'none';
-
-  const spinner = document.createElement('div');
-  spinner.className = 'spinner';
-  spinner.id = 'loadingSpinner';
-  chat.appendChild(spinner);
-
-  try {
-    const res = await fetch('/consultar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cnpj: cnpjLimpo })
-    });
-
-    const data = await res.json();
-    document.getElementById('loadingSpinner')?.remove();
-
-    if (data.erro) {
-      addMensagem(`❌ ${data.erro}`);
-      return;
-    }
-
-    ultimoDiagnostico = data;
-    iniciarFluxo(data);
-    document.getElementById('btnDownload').classList.add('show');
-
-  } catch (err) {
-    document.getElementById('loadingSpinner')?.remove();
-    addMensagem(`❌ Erro ao consultar: ${err.message}`);
-  }
-}
-
-function iniciarFluxo(data) {
-  addMensagem(`Olá, ${data.responsavel || 'empreendedor(a)'}!`);
-  if (data.status === 'ativo') addMensagem("✅ Seu CNPJ está ativo na Receita Federal. Possíveis guias mensais pendentes.");
-  else if (data.status === 'baixado') addMensagem("⚠️ CNPJ baixado na Receita Federal. Ainda existem pendências.");
-  else if (data.status === 'inapto') addMensagem("❌ CNPJ inapto perante a Receita Federal devido a pendências.");
-
-  addMensagem(`📌 Situação do enquadramento: ${data.situacao_enquadramento}`);
-  addMensagem(`📄 Declaração anual: ${data.declaracao_anual}`);
-  addMensagem(`💰 Dívida ativa: ${data.divida_ativa}`);
-  addMensagem(`💳 Valor estimado para regularização: ${data.valor_regularizacao}`);
-
-  mostrarOpcoes(["Continuar diagnóstico"], (opcao) => {
-    addMensagem(opcao, 'user');
-    addMensagem("📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...");
-    mostrarBotoesFinais();
-  });
-}
-
-function mostrarOpcoes(opcoes, callback) {
-  const chat = document.getElementById('resultado');
-  const div = document.createElement('div');
-  div.className = 'opcoes-botoes';
-  opcoes.forEach(op => {
-    const btn = document.createElement('button');
-    btn.innerText = op;
-    btn.classList.add("verde");
-    btn.onclick = () => { div.remove(); callback(op); };
-    div.appendChild(btn);
-  });
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function mostrarBotoesFinais() {
-  const chat = document.getElementById('resultado');
-  const div = document.createElement('div');
-  div.className = 'opcoes-botoes';
-
-  const mensagemWhats = `Realizei o diagnóstico automático e quero dar continuidade à regularização.
-
-CNPJ: ${ultimoCNPJ}
-Nome/Razão Social: ${ultimoDiagnostico.responsavel || 'Não informado'}
-Status: ${ultimoDiagnostico.status || 'Não informado'}
-Enquadramento: ${ultimoDiagnostico.situacao_enquadramento || 'Não informado'}
-Declaração anual: ${ultimoDiagnostico.declaracao_anual || 'Não informado'}
-Dívida ativa: ${ultimoDiagnostico.divida_ativa || 'Não informado'}
-Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 'Não informado'}`;
-
-  const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent(mensagemWhats)}`;
-
-  const btnWhats = document.createElement('button');
-  btnWhats.innerText = "Iniciar regularização";
-  btnWhats.classList.add("verde");
-  btnWhats.onclick = () => { window.open(linkWhats, '_blank'); };
-
-  const btnNovo = document.createElement('button');
-  btnNovo.innerText = "Consultar novo CNPJ";
-  btnNovo.classList.add("azul");
-  btnNovo.onclick = () => { location.reload(); };
-
-  div.appendChild(btnWhats);
-  div.appendChild(btnNovo);
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-</script>
-  
 <!-- Botão fixo para iniciar regularização -->
-<button id="btnRegularizar" class="btn-regularizar" onclick="iniciarRegularizacao()">
+<button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M3 8l7 7 7-7"/>
+    <path d="M3 12l7 7 11-11"/>
   </svg>
-  Regularizar
+  Iniciar regularização
 </button>
 
 <!-- Botão fixo para baixar o relatório -->
