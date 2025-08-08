@@ -10,17 +10,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    /* Botão de download flutuante no canto direito do card */
+    /* Botão de download compacto e afastado do card */
     .btn-download {
       position: absolute;
       top: -35px;
-      right: 0;
+      right: 8px;
       background-color: #555;
       color: #fff;
       border: none;
-      padding: 6px 10px;
+      padding: 5px 10px;
       font-size: 12px;
-      border-radius: 16px;
+      border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -47,50 +47,6 @@
       padding: 30px;
       border-radius: 20px;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    }
-
-    .avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-    .opcoes-botoes {
-      margin-top: 10px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: nowrap;
-    }
-    .opcoes-botoes button {
-      flex: 1;
-      margin: 4px 0;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 16px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .opcoes-botoes button.verde {
-      background-color: #17e30d;
-      color: #000;
-    }
-    .opcoes-botoes button.verde:hover {
-      background-color: #13b80a;
-    }
-    .opcoes-botoes button.azul {
-      background-color: #0f3efa;
-      color: #fff;
-    }
-    .opcoes-botoes button.azul:hover {
-      background-color: #0c2ecc;
-    }
-    .opcoes-botoes button.cinza {
-      background-color: #555;
-      color: #fff;
-    }
-    .opcoes-botoes button.cinza:hover {
-      background-color: #333;
     }
   </style>
 </head>
@@ -291,7 +247,6 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      // Logotipo
       const logoUrl = "https://i.ibb.co/1Tbdtj0/logo-cnpj-legal.png";
       doc.addImage(logoUrl, "PNG", 10, 10, 40, 20);
 
@@ -302,7 +257,6 @@ Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 
       doc.text(`Data e Hora: ${new Date().toLocaleString()}`, 105, 30, null, null, "center");
       doc.text(`CNPJ Consultado: ${ultimoCNPJ}`, 10, 50);
 
-      // Conversa
       let y = 60;
       document.querySelectorAll("#resultado div").forEach(msg => {
         const text = msg.innerText.trim();
