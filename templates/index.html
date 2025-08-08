@@ -8,9 +8,28 @@
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    /* Ajustes extras para imagem visível e card branco */
+    .headline-card {
+      bottom: -80px; /* desce mais o card para mostrar mais da imagem */
+    }
+    .container {
+      background: white; /* mantém fundo branco no card de mensagens */
+      color: black;
+      margin-top: 150px; /* desce mais a caixa de consulta */
+    }
+    .msg-bot {
+      background: #0f3efa;
+      color: white;
+    }
+    .msg-user {
+      background: #eee;
+      color: black;
+    }
+  </style>
 </head>
 <body>
-  <!-- Seção Hero com imagem de fundo e degradê -->
+  <!-- Seção Hero -->
   <section class="hero">
     <div class="headline-card">
       <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
@@ -25,7 +44,7 @@
     </div>
   </section>
 
-  <!-- Container principal -->
+  <!-- Container -->
   <div class="container">
     <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
     <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
@@ -33,7 +52,6 @@
     <div id="resultado" class="chatbox"></div>
   </div>
 
-  <!-- Scripts -->
   <script>
     function limparMascara(cnpj) {
       return cnpj.replace(/\D/g, '');
@@ -112,6 +130,7 @@
 
     function mostrarMensagemFinal(data) {
       const chat = document.getElementById('resultado');
+      chat.innerHTML = ''; // limpa antes de exibir
       let msg = '';
 
       if (data.status === 'ativo') {
