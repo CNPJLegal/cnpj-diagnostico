@@ -113,6 +113,31 @@ body {
   z-index: 3;
 }
 
+/* Inputs e botões apenas dentro do container */
+input,
+.container button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 100px;
+  border: none;
+  font-size: 16px;
+  outline: none;
+}
+
+input { background: #eee; color: #000; }
+
+.container button {
+  background-color: #17e30d;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+.container button:hover {
+  background-color: #13b80a;
+}
+
 /* Botões fixos no canto inferior direito */
 .btn-download,
 .btn-regularizar {
