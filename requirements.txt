@@ -1,4 +1,2 @@
-Flask
-gspread
-google-auth
-
+flask
+requests
