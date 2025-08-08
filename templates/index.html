@@ -38,6 +38,7 @@
       return cnpj.replace(/\D/g, '');
     }
 
+    // Máscara ao digitar
     document.getElementById('cnpjInput').addEventListener('input', function (e) {
       let v = e.target.value.replace(/\D/g, '').slice(0, 14);
       if (v.length > 2) v = v.replace(/(\d{2})(\d)/, '$1.$2');
@@ -92,6 +93,8 @@
     }
 
     function iniciarFluxo(data) {
+      addMensagem(`Olá, ${data.responsavel || 'empreendedor(a)'}!`);
+
       if (data.status === 'ativo') {
         addMensagem("Confirmamos que seu CNPJ está ativo na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais pendentes.");
       } else if (data.status === 'baixado') {
@@ -102,7 +105,6 @@
         addMensagem("❌ Não conseguimos identificar o status do seu CNPJ.");
       }
 
-      // Exemplo de botão para continuar
       mostrarOpcoes(["Continuar diagnóstico"], (opcao) => {
         addMensagem(opcao, 'user');
         addMensagem("📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...");
