@@ -8,6 +8,28 @@
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/static/style.css" />
   <style>
+    /* Ajuste para subir o layout branco */
+    .hero {
+      position: relative;
+      height: auto; /* removendo 120vh para evitar espaço extra */
+      padding-bottom: 30px; /* um espaço menor entre o card e o container */
+      background: #000;
+    }
+    .headline-card {
+      position: relative;
+      margin: 0 auto;
+      bottom: auto;
+      transform: none;
+    }
+    .container {
+      max-width: 480px;
+      margin: 20px auto 40px; /* reduzido para subir */
+      background: #fff;
+      color: #000;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
     .avatar {
       width: 24px;
       height: 24px;
