@@ -59,25 +59,45 @@ async function consultarCNPJ() {
 function iniciarConversa(data) {
     const chat = document.getElementById('resultado');
 
-    // Mensagens do diagnóstico (100% visíveis)
-    chat.innerHTML += `<div class="msg-bot">Olá, ${data.responsavel || 'empreendedor(a)'}!</div>`;
-    chat.innerHTML += `<div class="msg-bot">${statusMensagem(data.status)}</div>`;
-    chat.innerHTML += `<div class="msg-bot">📌 Situação do enquadramento: ${data.situacao_enquadramento}</div>`;
-    chat.innerHTML += `<div class="msg-bot">📄 Declaração Anual: ${data.declaracao_anual}</div>`;
-    chat.innerHTML += `<div class="msg-bot">💰 Dívida ativa: ${data.divida_ativa}</div>`;
-    chat.innerHTML += `<div class="msg-bot">💵 Valor estimado para regularização: ${data.valor_regularizacao}</div>`;
+    // Saudação apenas se existir nome ou texto
+    if (data.responsavel && data.responsavel.trim() !== "") {
+        chat.innerHTML += `<div class="msg-bot">Olá, ${data.responsavel}!</div>`;
+    } else {
+        chat.innerHTML += `<div class="msg-bot">Olá, empreendedor(a)!</div>`;
+    }
 
-    if (data.cnae_principal) chat.innerHTML += `<div class="msg-bot">🏢 CNAE Principal: ${data.cnae_principal}</div>`;
-    if (data.natureza_juridica) chat.innerHTML += `<div class="msg-bot">⚖️ Natureza Jurídica: ${data.natureza_juridica}</div>`;
-    if (data.abertura) chat.innerHTML += `<div class="msg-bot">📅 Data de Abertura: ${data.abertura}</div>`;
-    if (data.logradouro) chat.innerHTML += `<div class="msg-bot">📍 Endereço: ${data.logradouro}, ${data.numero || ''} - ${data.municipio}/${data.uf}</div>`;
-    if (data.email) chat.innerHTML += `<div class="msg-bot">✉️ E-mail: ${data.email}</div>`;
-    if (data.telefone) chat.innerHTML += `<div class="msg-bot">📞 Telefone: ${data.telefone}</div>`;
-    if (data.capital_social) chat.innerHTML += `<div class="msg-bot">💼 Capital Social: ${data.capital_social}</div>`;
+    // Status cadastral
+    if (data.status && data.status.trim() !== "") {
+        chat.innerHTML += `<div class="msg-bot">${statusMensagem(data.status)}</div>`;
+    }
+
+    // Demais campos (adiciona só se não estiver vazio)
+    if (data.situacao_enquadramento) 
+        chat.innerHTML += `<div class="msg-bot">📌 Situação do enquadramento: ${data.situacao_enquadramento}</div>`;
+    if (data.declaracao_anual) 
+        chat.innerHTML += `<div class="msg-bot">📄 Declaração Anual: ${data.declaracao_anual}</div>`;
+    if (data.divida_ativa) 
+        chat.innerHTML += `<div class="msg-bot">💰 Dívida ativa: ${data.divida_ativa}</div>`;
+    if (data.valor_regularizacao) 
+        chat.innerHTML += `<div class="msg-bot">💵 Valor estimado para regularização: ${data.valor_regularizacao}</div>`;
+    if (data.cnae_principal) 
+        chat.innerHTML += `<div class="msg-bot">🏢 CNAE Principal: ${data.cnae_principal}</div>`;
+    if (data.natureza_juridica) 
+        chat.innerHTML += `<div class="msg-bot">⚖️ Natureza Jurídica: ${data.natureza_juridica}</div>`;
+    if (data.abertura) 
+        chat.innerHTML += `<div class="msg-bot">📅 Data de Abertura: ${data.abertura}</div>`;
+    if (data.logradouro) 
+        chat.innerHTML += `<div class="msg-bot">📍 Endereço: ${data.logradouro}, ${data.numero || ''} - ${data.municipio}/${data.uf}</div>`;
+    if (data.email) 
+        chat.innerHTML += `<div class="msg-bot">✉️ E-mail: ${data.email}</div>`;
+    if (data.telefone) 
+        chat.innerHTML += `<div class="msg-bot">📞 Telefone: ${data.telefone}</div>`;
+    if (data.capital_social) 
+        chat.innerHTML += `<div class="msg-bot">💼 Capital Social: ${data.capital_social}</div>`;
 
     window.dadosCNPJ = data;
 
-    // Botão verde no padrão CNPJ Legal
+    // Botão verde continuar
     chat.innerHTML += `
         <div class="opcoes-botoes">
             <button style="background:#17e30d; color:#000; border:none; padding:8px 14px; border-radius:14px; cursor:pointer;" onclick="mostrarBotoesFinais()">Continuar diagnóstico</button>
