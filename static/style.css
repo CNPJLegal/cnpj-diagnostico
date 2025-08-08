@@ -8,6 +8,7 @@ body {
   font-family: Arial, sans-serif;
   background-color: #000;
   color: #fff;
+  line-height: 1.5;
 }
 
 .hero {
@@ -36,7 +37,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(12px);
   border-radius: 24px;
   padding: 30px;
@@ -46,7 +47,7 @@ body {
 }
 
 .headline-card h1 {
-  font-size: 24px;
+  font-size: 26px;
   color: #39c409;
   margin-bottom: 10px;
 }
@@ -70,12 +71,14 @@ body {
   padding: 10px 15px;
   border-radius: 32px;
   font-size: 14px;
+  color: white;
+  font-weight: bold;
 }
 
 .container {
   max-width: 480px;
   margin: 100px auto 40px;
-  background: rgba(30, 30, 30, 0.5);
+  background: rgba(30, 30, 30, 0.6);
   backdrop-filter: blur(12px);
   padding: 30px;
   border-radius: 20px;
@@ -88,6 +91,7 @@ input, button {
   border-radius: 100px;
   border: none;
   font-size: 16px;
+  outline: none;
 }
 
 input {
@@ -98,7 +102,13 @@ input {
 button {
   background-color: #39c409;
   color: #000;
+  font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #2da306;
 }
 
 .chatbox {
@@ -139,4 +149,26 @@ button {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  .headline-card {
+    padding: 20px;
+    bottom: -20px;
+  }
+  
+  .headline-card h1 {
+    font-size: 20px;
+  }
+
+  .card-item {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .container {
+    margin: 80px 20px 30px;
+    padding: 20px;
+  }
 }
