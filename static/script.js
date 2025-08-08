@@ -58,10 +58,10 @@ async function consultarCNPJ() {
 function iniciarConversa(data) {
     const chat = document.getElementById('resultado');
 
-    // Saudação
+    // Saudação com nome real
     chat.innerHTML += `<div class="msg-bot">Olá, ${data.responsavel || 'empreendedor(a)'}!</div>`;
 
-    // Diagnóstico
+    // Situação cadastral real
     if (data.status === 'ativo') {
         chat.innerHTML += `<div class="msg-bot">Confirmamos que seu CNPJ está ativo na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais pendentes.</div>`;
     } else if (data.status === 'baixado') {
@@ -70,9 +70,9 @@ function iniciarConversa(data) {
         chat.innerHTML += `<div class="msg-bot">Seu CNPJ está inapto perante a Receita Federal devido a pendências existentes.</div>`;
     }
 
-    // Dívida ativa
-    if (data.divida_ativa) {
-        chat.innerHTML += `<div class="msg-bot">Devido ao não pagamento das taxas mensais do seu CNPJ, a dívida foi transferida para o seu CPF, tornando-se uma dívida ativa com a Receita Federal.</div>`;
+    // Dívida ativa (quando disponível)
+    if (data.divida_ativa && data.divida_ativa !== "Desconhecido (necessária integração PGFN)") {
+        chat.innerHTML += `<div class="msg-bot">Foi identificada dívida ativa vinculada ao seu CNPJ.</div>`;
     }
 
     // Botão verde de continuar
