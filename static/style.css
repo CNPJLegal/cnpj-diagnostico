@@ -25,7 +25,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') center -180px / cover no-repeat;
+  background: url('https://i.ibb.co/1tV5D6gP/Capa-You-Tube.png') center -180px / cover no-repeat;
 
   /* 👉 máscara que aumenta a opacidade da foto conforme sobe */
   /* No ponto 0px (base), a foto fica com alpha = var(--fade-strength).
