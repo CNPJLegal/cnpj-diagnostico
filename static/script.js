@@ -4,7 +4,7 @@
 const USE_PGFN = false; // deixe false enquanto não contratar a API da PGFN
 
 // =========================
-// AVATARES
+/* AVATARES */
 // =========================
 const avatarBot  = "https://i.ibb.co/b5h1V8nd/i-cone.png";            // CNPJ Legal
 const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";  // Usuário
@@ -17,7 +17,7 @@ window.dadosCNPJ = {};
 window.diag = {
   tela1: null,                                   // Situação Cadastral (RFB/CNPJ)
   tela2: { status: USE_PGFN ? "PENDENTE" : "NAO_CONSULTADO", detalhes: null }, // PGFN/CPF
-  tela3: null,                                   // DASN-SIMEI (declaração anual)
+  tela3: null,                                   // DASN-SIMEI (declaração anual) -> controlada por pergunta
   tela4: null,                                   // PGMEI (débitos DAS)
   tela5: null                                    // SIMEI/Simples (enquadramento)
 };
@@ -153,12 +153,12 @@ async function consultarCNPJ() {
     // NORMALIZAÇÕES/DEFAULTS para manter o fluxo até integrar tudo:
     const status = safeText(data.status || data.situacao || "");
     const simplesOptante = !!(data.simples_optante ?? data.simei?.optante ?? data.company?.simei?.optant);
-    const dasnPendente   = !!(data.dasn_pendente ?? false);
+    // T3 agora é decidido por PERGUNTA ao usuário (não inferir aqui)
     const dasAbertas     = Number(data.pgmei_total_em_aberto ?? 0);
 
     // Grava no diag
     window.diag.tela1 = { status: status || "—" };
-    window.diag.tela3 = { dasn_pendente: dasnPendente };
+    window.diag.tela3 = { dasn_status: "NAO_INFORMADO" }; // será definido pela pergunta
     window.diag.tela4 = { das_em_aberto: dasAbertas };
     window.diag.tela5 = { simei_optante: simplesOptante };
 
@@ -193,16 +193,19 @@ function statusMensagem(status) {
 }
 
 async function iniciarConversa(data) {
-  if (safeText(data.responsavel)) await botSay(`Olá, ${safeText(data.responsavel)}.`);
-  else                            await botSay("Olá.");
+  const nome = safeText(data.responsavel) || "";
+  if (nome) await botSay(`Olá, ${nome}.`);
+  else      await botSay("Olá.");
 
   if (window.diag.tela1?.status) await botSay(statusMensagem(window.diag.tela1.status));
   if (window.diag.tela5) {
     await botSay(`Enquadramento: ${window.diag.tela5.simei_optante ? "MEI (SIMEI)" : "desenquadrado do MEI"}.`);
   }
-  if (window.diag.tela3) {
-    await botSay(`Declaração Anual (DASN-SIMEI): ${window.diag.tela3.dasn_pendente ? "pendente" : "em dia"}.`);
-  }
+
+  // === Perguntar sobre a DASN (Tela 3) ===
+  await perguntarDASN(); // define window.diag.tela3 conforme resposta
+
+  // T4 — PGMEI (DAS em aberto)
   if (window.diag.tela4) {
     await botSay(`Guias DAS em aberto: ${window.diag.tela4.das_em_aberto}.`);
   }
@@ -219,6 +222,49 @@ async function iniciarConversa(data) {
     await botSay("Você pode iniciar a regularização ou consultar um novo CNPJ.");
 
     mostrarBotoesFinais();
+  });
+}
+
+// Pergunta da DASN com 3 botões: "Ainda não", "Já declarei", "Não sei"
+async function perguntarDASN() {
+  // mostra pergunta
+  await botSay("Você entregou a Declaração Anual de Faturamento (DASN-SIMEI) do ano passado?");
+
+  return new Promise((resolve) => {
+    const chat = document.getElementById('resultado');
+    const div  = document.createElement('div');
+    div.className = 'opcoes-botoes';
+
+    const addBtn = (label, onClick, verde=false) => {
+      const b = document.createElement('button');
+      b.textContent = label;
+      if (verde) b.classList.add('verde');
+      b.onclick = () => {
+        div.remove();
+        addMensagem(label, 'user');
+        onClick();
+        resolve();
+      };
+      div.appendChild(b);
+    };
+
+    addBtn("Ainda não", async () => {
+      window.diag.tela3 = { dasn_status: "PENDENTE" };
+      await botSay("Declaração Anual (DASN-SIMEI): pendente.");
+    }, true);
+
+    addBtn("Já declarei", async () => {
+      window.diag.tela3 = { dasn_status: "EM_DIA" };
+      await botSay("Declaração Anual (DASN-SIMEI): informada como entregue. Será validado por um especialista na regularização.");
+    });
+
+    addBtn("Não sei", async () => {
+      window.diag.tela3 = { dasn_status: "NAO_INFORMADO" };
+      // não falar nada no chat; segue o fluxo
+    });
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
   });
 }
 
@@ -285,7 +331,7 @@ function gerarPropostaComBaseNoDiagnostico(diag) {
   const baixado = status.includes("baixado");
 
   const simei     = !!diag.tela5?.simei_optante;
-  const dasnPend  = !!diag.tela3?.dasn_pendente;
+  const dasnInfo  = diag.tela3?.dasn_status || "NAO_INFORMADO";
   const dasAbert  = Number(diag.tela4?.das_em_aberto || 0);
 
   // 1) MEI ativo/inapto (continua MEI)
@@ -387,6 +433,7 @@ async function baixarConversa() {
   const doc = new jsPDF();
 
   // 1) Fonte Roboto p/ acentos
+  let loadedRoboto = false;
   try {
     const fontUrl = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf"; // Roboto-Regular.ttf
     const ab = await fetch(fontUrl).then(r => r.arrayBuffer());
@@ -396,6 +443,7 @@ async function baixarConversa() {
     doc.addFileToVFS("Roboto-Regular.ttf", b64);
     doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
     doc.setFont("Roboto", "normal");
+    loadedRoboto = true;
   } catch (e) {
     doc.setFont("helvetica", "normal");
   }
@@ -426,9 +474,11 @@ async function baixarConversa() {
   doc.line(14, 28, 196, 28);
 
   // 3) Tabela cadastral mínima (somente o que faz sentido ao diagnóstico)
+  const nomeEmpreendedor = d.responsavel || d.company?.members?.[0]?.person?.name || "";
   const linhasCadastrais = [
     ["CNPJ", d.cnpj || ultimoCNPJ || "—"],
     ["Razão Social", d.razao_social || d.company?.name || "—"],
+    ["Empreendedor", nomeEmpreendedor || "—"],
     ["Situação Cadastral", window.diag.tela1?.status || "—"],
     ["Enquadramento", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" : (window.diag.tela5?.simei_optante === false ? "Desenquadrado do MEI" : "—")]
   ].map(([k, v]) => [sanitize(k), sanitize(String(v))]);
@@ -453,10 +503,18 @@ async function baixarConversa() {
   }
 
   // 4) Resumo das 5 telas (inclui PGFN como "não consultado")
+  const dasnResumo = (() => {
+    const s = window.diag.tela3?.dasn_status;
+    if (s === "PENDENTE") return "Pendente";
+    if (s === "EM_DIA") return "Em dia";
+    if (s === "NAO_INFORMADO") return "Não informado";
+    return "—";
+  })();
+
   const dsum = [
     ["T1 — Situação Cadastral (RFB)", window.diag.tela1?.status || "—"],
     ["T2 — Dívida Ativa (PGFN/CPF)", USE_PGFN ? (window.diag.tela2?.status || "—") : "Consulta não realizada nesta etapa"],
-    ["T3 — Declaração Anual (DASN-SIMEI)", window.diag.tela3?.dasn_pendente === true ? "Pendente" : (window.diag.tela3?.dasn_pendente === false ? "Em dia" : "—")],
+    ["T3 — Declaração Anual (DASN-SIMEI)", dasnResumo],
     ["T4 — Débitos DAS (PGMEI)", (window.diag.tela4?.das_em_aberto ?? "—")],
     ["T5 — Enquadramento (SIMEI/SN/LP)", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" : (window.diag.tela5?.simei_optante === false ? "Desenquadrado do MEI" : "—")]
   ].map(([k, v]) => [sanitize(k), sanitize(String(v))]);
@@ -491,7 +549,7 @@ async function baixarConversa() {
   const escopo = prop.corpo.map(i => `• ${i}`).join("\n");
   doc.text(doc.splitTextToSize(sanitize(escopo), 182), 14, y2);
 
-  // 6) Chamada + botão WhatsApp (100% arredondado)
+  // 6) Chamada + botão WhatsApp (100% arredondado, TEXTO EM NEGRITO)
   const btnYBase = y2 + 22;
   doc.setFontSize(11);
   const desc = sanitize("Entre em contato pelo WhatsApp para avançarmos com a regularização.");
@@ -509,6 +567,14 @@ async function baixarConversa() {
   } else {
     doc.rect(btnX, btnY, btnW, btnH, "F");
   }
+
+  // Texto em bold no botão
+  if (loadedRoboto) {
+    // Roboto regular only; usa bold do helvetica para garantir negrito
+    doc.setFont("helvetica", "bold");
+  } else {
+    doc.setFont("helvetica", "bold");
+  }
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.text(sanitize("Falar no WhatsApp"), btnX + 8, btnY + 8);
@@ -520,6 +586,7 @@ async function baixarConversa() {
 
   // 7) Rodapé
   let fy = btnY + 22;
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(100);
   doc.text(sanitize("Instagram: @cnpjlegal"), 14, fy);
