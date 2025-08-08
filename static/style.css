@@ -14,7 +14,7 @@ body {
 .hero {
   position: relative;
   height: 120vh;
-  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -180px; /* subimos a imagem */
+  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') no-repeat center -180px;
   background-size: cover;
   overflow: hidden;
 }
@@ -25,25 +25,26 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 120px; /* vinheta preta discreta */
+  height: 300px;
   background: linear-gradient(
-    to top, 
-    rgba(0, 0, 0, 1), 
-    rgba(0, 0, 0, 0.85), 
-    rgba(0, 0, 0, 0.5), 
+    to top,
+    rgba(0, 0, 0, 1),
+    rgba(0, 0, 0, 0.85),
+    rgba(0, 0, 0, 0.6),
+    rgba(0, 0, 0, 0.3),
     rgba(0, 0, 0, 0)
   );
-  z-index: 1;
+  z-index: 2; /* acima da imagem */
   pointer-events: none;
 }
 
 .headline-card {
   position: absolute;
-  bottom: 40px; /* mais baixo para não cobrir o rosto */
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 2;
-  background: rgba(0, 0, 0, 0.85);
+  z-index: 3; /* acima do degradê */
+  background: rgba(0, 0, 0, 0.85); /* transparente para deixar degradê visível */
   backdrop-filter: blur(12px);
   border-radius: 24px;
   padding: 30px;
@@ -83,8 +84,8 @@ body {
 
 .container {
   max-width: 480px;
-  margin: 80px auto 40px; /* mais afastado do card */
-  background: #fff; /* fundo branco */
+  margin: 80px auto 40px;
+  background: #fff;
   color: #000;
   padding: 30px;
   border-radius: 20px;
@@ -155,8 +156,12 @@ button:hover {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsividade */
