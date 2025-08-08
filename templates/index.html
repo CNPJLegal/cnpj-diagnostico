@@ -10,11 +10,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    /* Botão de download compacto e afastado do card */
+    /* Botão de download */
     .btn-download {
       position: absolute;
-      top: -28px; /* pequeno espaço pra não colar no card preto */
-      right: 8px;
+      top: -32px;
+      right: 10px;
       background-color: #555;
       color: #fff;
       border: none;
@@ -22,11 +22,10 @@
       font-size: 12px;
       border-radius: 12px;
       cursor: pointer;
-      display: flex;
+      display: none;
       align-items: center;
       gap: 5px;
       z-index: 20;
-      display: none;
       white-space: nowrap;
     }
     .btn-download:hover {
@@ -38,11 +37,11 @@
       fill: #fff;
     }
 
-    /* Card branco subindo e encostando no preto */
+    /* Card branco ajustado */
     .container {
       position: relative;
       max-width: 480px;
-      margin: -30px auto 40px; /* sobe o card branco */
+      margin: -25px auto 40px; /* sobe o card e reduz o espaço */
       background: #fff;
       color: #000;
       padding: 30px;
@@ -154,7 +153,7 @@
         ultimoDiagnostico = data;
         iniciarFluxo(data);
 
-        // Exibir botão de download
+        // Exibe botão de download
         document.getElementById("btnDownload").style.display = "flex";
       } catch (err) {
         document.getElementById('loadingSpinner')?.remove();
