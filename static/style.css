@@ -122,19 +122,20 @@ body {
   background-color: #17e30d;
   color: #000;
   border: none;
-  padding: 6px 12px; /* mais estreito */
-  font-size: 13px;
+  padding: 8px 20px; /* largura ajustada */
+  font-size: 14px; /* texto um pouco maior */
   font-weight: bold;
   border-radius: 999px;
   cursor: pointer;
-  display: inline-flex; /* impede largura desnecessária */
+  display: flex; /* permite alinhar conteúdo */
   align-items: center;
-  gap: 5px;
+  justify-content: center; /* garante centralização do texto e ícone */
+  gap: 6px; /* espaço entre ícone e texto */
   white-space: nowrap; /* evita quebra de linha */
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   opacity: 0;
   transition: all 0.4s ease;
-  z-index: 50;
+  z-index: 999; /* mantém acima de tudo */
 }
 
 .btn-download.show {
@@ -147,8 +148,8 @@ body {
 }
 
 .btn-download svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   fill: #000;
 }
 
