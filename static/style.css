@@ -99,14 +99,12 @@ body {
 /* Caixa do formulário/chat */
 .container {
   max-width: 480px;
-  margin: -20px auto 40px; /* SUBIU apenas o card branco */
+  margin: 80px auto 40px;
   background: #fff;
   color: #000;
   padding: 30px;
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 3; /* garante sobreposição à hero */
 }
 
 input, button {
@@ -220,5 +218,5 @@ button:hover { background-color: #13b80a; }
   .headline-card { padding: 20px; bottom: 20px; }
   .headline-card h1 { font-size: 20px; }
   .card-item { font-size: 12px; padding: 8px 12px; }
-  .container { margin: -10px 20px 30px; padding: 20px; } /* ajuste proporcional no mobile */
+  .container { margin: 50px 20px 30px; padding: 20px; }
 }
