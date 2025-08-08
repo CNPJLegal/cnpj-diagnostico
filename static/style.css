@@ -1,12 +1,8 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-:root {
-  /* ajuste rápido da altura do degradê */
-  --fade-height: 120px; /* experimente 80px ou 60px se quiser mais curto */
+:root{
+  --fade-height: 120px;   /* altura do fade (curto) */
+  --fade-strength: 0.25;  /* opacidade da foto na base (0 = some, 0.25 = 25% visível) */
 }
 
 body {
@@ -16,31 +12,56 @@ body {
   line-height: 1.5;
 }
 
+/* A HERO agora não tem background direto */
 .hero {
   position: relative;
   height: 120vh;
-
-  /* ✅ Degradê curto aplicado como 1ª camada + imagem como 2ª camada */
-  background-image:
-    linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0)),
-    url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png');
-
-  /* tamanho e posição independentes por camada */
-  background-size: 100% var(--fade-height), cover;
-  background-repeat: no-repeat, no-repeat;
-  background-position: bottom, center -180px;
-
   overflow: hidden;
+  background: #000; /* fundo preto pra “escurecer” onde a foto ficar transparente */
 }
 
-/* removido o ::after — não é mais necessário */
+/* A imagem de fundo vai no ::before e recebe a máscara */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url('https://i.ibb.co/tTSpfpLy/Capa-You-Tube.png') center -180px / cover no-repeat;
 
+  /* 👉 máscara que aumenta a opacidade da foto conforme sobe */
+  /* No ponto 0px (base), a foto fica com alpha = var(--fade-strength).
+     Até var(--fade-height), vai subindo até 1 (100% visível). */
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgba(0,0,0,var(--fade-strength)) 0,
+    rgba(0,0,0,1) var(--fade-height)
+  );
+  mask-image: linear-gradient(
+    to top,
+    rgba(0,0,0,var(--fade-strength)) 0,
+    rgba(0,0,0,1) var(--fade-height)
+  );
+}
+
+/* Fallback (se o browser não suportar mask-image): joga um degradê preto curto por cima */
+@supports not (-webkit-mask-image: linear-gradient(black, white)) {
+  .hero::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height: var(--fade-height);
+    background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0));
+    pointer-events:none;
+    z-index: 1;
+  }
+}
+
+/* Conteúdo da hero acima da imagem */
 .headline-card {
   position: absolute;
-  bottom: 40px; /* não cobre o rosto */
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10;
+  z-index: 2; /* acima do ::before e do fallback */
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(12px);
   border-radius: 24px;
@@ -89,8 +110,7 @@ body {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
-input,
-button {
+input, button {
   width: 100%;
   padding: 12px;
   margin-top: 12px;
@@ -100,10 +120,7 @@ button {
   outline: none;
 }
 
-input {
-  background: #eee;
-  color: #000;
-}
+input { background: #eee; color: #000; }
 
 button {
   background-color: #17e30d;
@@ -112,10 +129,7 @@ button {
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
 }
-
-button:hover {
-  background-color: #13b80a;
-}
+button:hover { background-color: #13b80a; }
 
 .chatbox {
   margin-top: 20px;
@@ -152,29 +166,12 @@ button:hover {
   margin: 20px auto;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* Responsividade */
 @media (max-width: 600px) {
-  .headline-card {
-    padding: 20px;
-    bottom: 20px;
-  }
-
-  .headline-card h1 {
-    font-size: 20px;
-  }
-
-  .card-item {
-    font-size: 12px;
-    padding: 8px 12px;
-  }
-
-  .container {
-    margin: 50px 20px 30px;
-    padding: 20px;
-  }
+  .headline-card { padding: 20px; bottom: 20px; }
+  .headline-card h1 { font-size: 20px; }
+  .card-item { font-size: 12px; padding: 8px 12px; }
+  .container { margin: 50px 20px 30px; padding: 20px; }
 }
