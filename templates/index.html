@@ -9,32 +9,11 @@
   <link rel="stylesheet" href="/static/style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    .hero {
-      position: relative;
-      height: 120vh;
-      background: #000;
-    }
-    .headline-card {
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    .container {
-      max-width: 480px;
-      margin: 30px auto 40px;
-      background: #fff;
-      color: #000;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      position: relative;
-    }
-    /* Botão de download no canto */
+    /* Posicionamento correto do botão */
     .btn-download {
       position: absolute;
-      top: -45px;
-      right: 0;
+      top: 10px;
+      right: 10px;
       background-color: #555;
       color: #fff;
       border: none;
@@ -45,6 +24,7 @@
       display: flex;
       align-items: center;
       gap: 5px;
+      z-index: 10;
     }
     .btn-download:hover {
       background-color: #333;
@@ -53,6 +33,16 @@
       width: 14px;
       height: 14px;
       fill: #fff;
+    }
+    .container {
+      position: relative; /* necessário para posicionar o botão dentro */
+      max-width: 480px;
+      margin: 30px auto 40px;
+      background: #fff;
+      color: #000;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
     }
   </style>
 </head>
@@ -72,7 +62,7 @@
   </section>
 
   <div class="container">
-    <!-- Botão de download fora da conversa -->
+    <!-- Botão pequeno no canto direito -->
     <button class="btn-download" onclick="gerarPDF()">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
         <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
