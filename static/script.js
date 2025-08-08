@@ -61,25 +61,13 @@ async function consultarCNPJ() {
             return;
         }
 
-        // ✅ Mostra o botão de download imediatamente no início da conversa
+        // Mostra os dois botões fixos
         const btnDownload = document.getElementById('btnDownload');
-        if (btnDownload) {
-            btnDownload.classList.add('show');
-        }
+        const btnRegularizar = document.getElementById('btnRegularizar');
+        if (btnDownload) btnDownload.classList.add('show');
+        if (btnRegularizar) btnRegularizar.classList.add('show');
 
         iniciarConversa(data);
-
-    } catch (err) {
-        document.getElementById('loadingSpinner')?.remove();
-        addMensagemBot("❌ Erro ao consultar dados. Tente novamente mais tarde.");
-    }
-}
-
-        // ✅ Mostra o botão de download imediatamente
-        const btnDownload = document.getElementById('btnDownload');
-        setTimeout(() => {
-            btnDownload.classList.add('show');
-        }, 300);
 
     } catch (err) {
         document.getElementById('loadingSpinner')?.remove();
