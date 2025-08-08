@@ -263,6 +263,8 @@ async function consultarCNPJ() {
 
     ultimoDiagnostico = data;
     iniciarFluxo(data);
+    document.getElementById('btnDownload').classList.add('show');
+
   } catch (err) {
     document.getElementById('loadingSpinner')?.remove();
     addMensagem(`❌ Erro ao consultar: ${err.message}`);
