@@ -122,17 +122,18 @@ body {
   background-color: #17e30d;
   color: #000;
   border: none;
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 6px 12px; /* mais estreito */
+  font-size: 13px;
   font-weight: bold;
   border-radius: 999px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex; /* impede largura desnecessária */
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  white-space: nowrap; /* evita quebra de linha */
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   opacity: 0;
-  transition: all 0.5s ease;
+  transition: all 0.4s ease;
   z-index: 50;
 }
 
@@ -146,8 +147,8 @@ body {
 }
 
 .btn-download svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   fill: #000;
 }
 
