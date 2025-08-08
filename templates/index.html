@@ -61,8 +61,7 @@
       const input = document.getElementById('cnpjInput');
       const botao = document.getElementById('consultarBtn');
       const cnpjLimpo = limparMascara(input.value);
-
-      document.getElementById('resultado').innerHTML = '';
+      const chat = document.getElementById('resultado');
 
       if (!cnpjLimpo || cnpjLimpo.length !== 14 || !/^\d+$/.test(cnpjLimpo)) {
         addMensagem("⚠️ Digite um CNPJ válido com 14 números.");
@@ -76,6 +75,7 @@
       input.style.display = 'none';
       botao.style.display = 'none';
 
+      // Spinner
       addMensagem(`<div class='spinner'></div>`);
 
       try {
@@ -86,10 +86,9 @@
         });
 
         const data = await res.json();
-        document.getElementById('resultado').innerHTML = '';
 
-        // Reexibe o CNPJ no topo do chat
-        addMensagem(input.value, 'user');
+        // Remove spinner
+        chat.querySelectorAll('.spinner').forEach(s => s.remove());
 
         if (data.erro) {
           addMensagem(`❌ ${data.erro}`);
@@ -98,6 +97,7 @@
 
         iniciarFluxo(data);
       } catch (err) {
+        chat.querySelectorAll('.spinner').forEach(s => s.remove());
         addMensagem(`❌ Erro ao consultar: ${err.message}`);
       }
     }
@@ -105,15 +105,20 @@
     function iniciarFluxo(data) {
       addMensagem(`Olá, ${data.responsavel || 'empreendedor(a)'}!`);
 
+      // Status cadastral
       if (data.status === 'ativo') {
-        addMensagem("Confirmamos que seu CNPJ está ativo na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais pendentes.");
+        addMensagem("✅ Seu CNPJ está ativo na Receita Federal. Identificamos, no entanto, possíveis guias mensais pendentes.");
       } else if (data.status === 'baixado') {
-        addMensagem("Seu CNPJ está baixado (encerrado) na Receita Federal. Mesmo com o CNPJ baixado, ainda existem valores em aberto que precisam ser regularizados.");
+        addMensagem("⚠️ Seu CNPJ está baixado na Receita Federal. Mesmo assim, ainda existem pendências que precisam ser regularizadas.");
       } else if (data.status === 'inapto') {
-        addMensagem("Seu CNPJ está inapto perante a Receita Federal devido a pendências existentes.");
-      } else {
-        addMensagem("❌ Não conseguimos identificar o status do seu CNPJ.");
+        addMensagem("❌ Seu CNPJ está inapto perante a Receita Federal devido a pendências.");
       }
+
+      // Outras informações vindas da API
+      addMensagem(`📌 Situação do enquadramento: ${data.situacao_enquadramento}`);
+      addMensagem(`📄 Declaração anual: ${data.declaracao_anual}`);
+      addMensagem(`💰 Dívida ativa: ${data.divida_ativa}`);
+      addMensagem(`💳 Valor estimado para regularização: ${data.valor_regularizacao}`);
 
       mostrarOpcoes(["Continuar diagnóstico"], (opcao) => {
         addMensagem(opcao, 'user');
