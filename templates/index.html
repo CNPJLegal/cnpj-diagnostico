@@ -6,30 +6,9 @@
   <title>Consulta CNPJ - Diagnóstico Completo</title>
   <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/static/style.css" />
-  <style>
-    /* Ajustes extras para imagem visível e card branco */
-    .headline-card {
-      bottom: -80px; /* desce mais o card para mostrar mais da imagem */
-    }
-    .container {
-      background: white; /* mantém fundo branco no card de mensagens */
-      color: black;
-      margin-top: 150px; /* desce mais a caixa de consulta */
-    }
-    .msg-bot {
-      background: #0f3efa;
-      color: white;
-    }
-    .msg-user {
-      background: #eee;
-      color: black;
-    }
-  </style>
 </head>
 <body>
-  <!-- Seção Hero -->
   <section class="hero">
     <div class="headline-card">
       <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
@@ -44,7 +23,6 @@
     </div>
   </section>
 
-  <!-- Container -->
   <div class="container">
     <label for="cnpjInput" style="display:none;">Digite o CNPJ</label>
     <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18" aria-label="Campo para digitar o CNPJ">
@@ -53,27 +31,30 @@
   </div>
 
   <script>
+    // Função para limpar pontuação e deixar só números
     function limparMascara(cnpj) {
       return cnpj.replace(/\D/g, '');
     }
 
+    // Máscara ao digitar
     document.getElementById('cnpjInput').addEventListener('input', function (e) {
       let v = e.target.value.replace(/\D/g, '').slice(0, 14);
-      v = v.replace(/(\d{2})(\d)/, '$1.$2');
-      v = v.replace(/(\d{3})(\d)/, '$1.$2');
-      v = v.replace(/(\d{3})(\d)/, '$1/$2');
-      v = v.replace(/(\d{4})(\d)/, '$1-$2');
+      if (v.length > 2) v = v.replace(/(\d{2})(\d)/, '$1.$2');
+      if (v.length > 6) v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      if (v.length > 10) v = v.replace(/(\d{3})(\d)/, '$1/$2');
+      if (v.length > 15) v = v.replace(/(\d{4})(\d)/, '$1-$2');
       e.target.value = v;
     });
 
     async function consultarCNPJ() {
       const input = document.getElementById('cnpjInput');
-      const cnpj = limparMascara(input.value);
+      const cnpjLimpo = limparMascara(input.value);
       const chat = document.getElementById('resultado');
 
       chat.innerHTML = '';
 
-      if (!cnpj || cnpj.length !== 14) {
+      // Validação do CNPJ
+      if (!cnpjLimpo || cnpjLimpo.length !== 14 || !/^\d+$/.test(cnpjLimpo)) {
         chat.innerHTML = `<div class='msg-bot'>⚠️ Digite um CNPJ válido com 14 números.</div>`;
         return;
       }
@@ -84,20 +65,23 @@
         const res = await fetch('/consultar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cnpj })
+          body: JSON.stringify({ cnpj: cnpjLimpo })
         });
-
-        if (!res.ok) throw new Error(\`Erro HTTP \${res.status}\`);
 
         const data = await res.json();
         chat.innerHTML = '';
+
+        if (data.erro) {
+          chat.innerHTML = `<div class='msg-bot'>❌ ${data.erro}</div>`;
+          return;
+        }
 
         if (data.captcha) {
           chat.innerHTML += `
             <div class='msg-bot'>🧩 Precisamos que você resolva este CAPTCHA antes de continuar:</div>
             <img class="captcha" src="data:image/png;base64,${data.captcha}" style="width:200px;" alt="Imagem do captcha" />
             <input id="captchaInput" placeholder="Digite o texto da imagem" aria-label="Campo para resposta do captcha" />
-            <button onclick="enviarCaptcha('${cnpj}')">Enviar</button>
+            <button onclick="enviarCaptcha('${cnpjLimpo}')">Enviar</button>
           `;
         } else {
           mostrarMensagemFinal(data);
@@ -119,8 +103,6 @@
           body: JSON.stringify({ cnpj, captcha })
         });
 
-        if (!res.ok) throw new Error(\`Erro HTTP \${res.status}\`);
-
         const data = await res.json();
         mostrarMensagemFinal(data);
       } catch (err) {
@@ -130,7 +112,6 @@
 
     function mostrarMensagemFinal(data) {
       const chat = document.getElementById('resultado');
-      chat.innerHTML = ''; // limpa antes de exibir
       let msg = '';
 
       if (data.status === 'ativo') {
