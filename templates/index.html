@@ -10,32 +10,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    /* Botão de download compacto e bem posicionado */
-    .btn-download {
-      position: absolute;
-      top: -20px;
-      right: 10px;
-      background-color: #555;
-      color: #fff;
-      border: none;
-      padding: 5px 8px;
-      font-size: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      align-items: center;
-      gap: 4px;
-      z-index: 20;
-      display: none;
-      white-space: nowrap;
-    }
-    .btn-download:hover {
-      background-color: #333;
-    }
-    .btn-download svg {
-      width: 14px;
-      height: 14px;
-      fill: #fff;
-    }
+    <!-- Botão de Download -->
+<button id="btnDownload" class="btn-download" onclick="gerarPDF()">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M5 20h14v-2H5v2zm7-18l-5.5 5.5h4v6h3v-6h4L12 2z"/>
+  </svg>
+  Baixar Diagnóstico
+</button>
 
     /* Card branco encostado no preto */
     .container {
