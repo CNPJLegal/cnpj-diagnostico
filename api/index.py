@@ -25,13 +25,22 @@ def index():
 def static_files(filename):
     return send_from_directory(app.static_folder, filename)
 
-# Rota para servir favicon diretamente
+# Rota para servir favicon.ico
 @app.route('/favicon.ico')
-def favicon():
+def favicon_ico():
     try:
         return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
     except FileNotFoundError:
-        logger.warning("Favicon não encontrado, retornando vazio.")
+        logger.warning("favicon.ico não encontrado, retornando vazio.")
+        return '', 204
+
+# Rota para servir favicon.png (evita erro 500 caso não exista)
+@app.route('/favicon.png')
+def favicon_png():
+    try:
+        return send_from_directory(app.static_folder, 'favicon.png', mimetype='image/png')
+    except FileNotFoundError:
+        logger.warning("favicon.png não encontrado, retornando vazio.")
         return '', 204
 
 @app.route('/consultar', methods=['POST'])
