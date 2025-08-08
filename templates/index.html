@@ -31,6 +31,9 @@
   </div>
 
   <script>
+    let ultimoCNPJ = "";
+    let ultimoDiagnostico = {};
+
     const avatarBot = "https://i.ibb.co/b5h1V8nd/i-cone.png";
     const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";
 
@@ -38,7 +41,6 @@
       return cnpj.replace(/\D/g, '');
     }
 
-    // Máscara ao digitar
     document.getElementById('cnpjInput').addEventListener('input', function (e) {
       let v = e.target.value.replace(/\D/g, '').slice(0, 14);
       if (v.length > 2) v = v.replace(/(\d{2})(\d)/, '$1.$2');
@@ -68,6 +70,8 @@
         return;
       }
 
+      ultimoCNPJ = input.value;
+
       addMensagem(input.value, 'user');
       input.style.display = 'none';
       botao.style.display = 'none';
@@ -88,11 +92,11 @@
           return;
         }
 
-        // Limpa CNPJ duplicado no nome
         if (data.responsavel) {
           data.responsavel = data.responsavel.replace(/\d+/g, '').trim();
         }
 
+        ultimoDiagnostico = data;
         iniciarFluxo(data);
       } catch (err) {
         chat.querySelectorAll('.spinner').forEach(s => s.remove());
@@ -147,12 +151,24 @@
       const div = document.createElement('div');
       div.className = 'opcoes-botoes';
 
+      const mensagemWhats = `Realizei o diagnóstico automático e quero dar continuidade à regularização.
+
+CNPJ: ${ultimoCNPJ}
+Nome/Razão Social: ${ultimoDiagnostico.responsavel || 'Não informado'}
+Status: ${ultimoDiagnostico.status || 'Não informado'}
+Enquadramento: ${ultimoDiagnostico.situacao_enquadramento || 'Não informado'}
+Declaração anual: ${ultimoDiagnostico.declaracao_anual || 'Não informado'}
+Dívida ativa: ${ultimoDiagnostico.divida_ativa || 'Não informado'}
+Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 'Não informado'}`;
+
+      const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent(mensagemWhats)}`;
+
       const btnWhats = document.createElement('button');
       btnWhats.innerText = "Iniciar regularização";
       btnWhats.style.background = "#25D366";
       btnWhats.style.color = "#fff";
       btnWhats.onclick = () => {
-        window.open('https://wa.me/55SEUNUMEROAQUI?text=Quero%20iniciar%20a%20regulariza%C3%A7%C3%A3o%20do%20meu%20CNPJ', '_blank');
+        window.open(linkWhats, '_blank');
       };
 
       const btnNovo = document.createElement('button');
