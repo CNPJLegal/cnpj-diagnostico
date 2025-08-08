@@ -15,8 +15,10 @@ function limparMascara(cnpj) {
 // Função para adicionar mensagens do bot filtrando vazias ou só emoji
 function addMensagemBot(texto) {
     if (!texto) return;
-    const clean = texto.replace(/[\u{1F600}-\u{1F64F}]/gu, '').trim(); // remove emojis para checar texto real
-    if (clean === "") return; // ignora mensagens sem texto
+    const clean = texto.replace(/<[^>]*>?/gm, '') // remove HTML
+                       .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // remove emojis
+                       .trim();
+    if (clean === "") return; // ignora mensagens sem texto real
     document.getElementById('resultado').innerHTML += `<div class="msg-bot">${texto}</div>`;
 }
 
@@ -41,7 +43,11 @@ async function consultarCNPJ() {
     input.style.display = 'none';
     botao.style.display = 'none';
 
-    chat.innerHTML += `<div class="spinner"></div>`;
+    // Adiciona spinner fora do balão para não deixar bolha vazia
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner';
+    spinner.id = 'loadingSpinner';
+    chat.appendChild(spinner);
 
     try {
         const res = await fetch('/consultar', {
@@ -52,7 +58,7 @@ async function consultarCNPJ() {
 
         const data = await res.json();
 
-        document.querySelector('.spinner')?.remove();
+        document.getElementById('loadingSpinner')?.remove();
 
         if (data.erro) {
             addMensagemBot(`❌ ${data.erro}`);
@@ -61,7 +67,7 @@ async function consultarCNPJ() {
 
         iniciarConversa(data);
     } catch (err) {
-        document.querySelector('.spinner')?.remove();
+        document.getElementById('loadingSpinner')?.remove();
         addMensagemBot("❌ Erro ao consultar dados. Tente novamente mais tarde.");
     }
 }
