@@ -68,14 +68,9 @@
         return;
       }
 
-      // Exibir CNPJ como mensagem do usuário
       addMensagem(input.value, 'user');
-
-      // Esconder campo e botão
       input.style.display = 'none';
       botao.style.display = 'none';
-
-      // Spinner
       addMensagem(`<div class='spinner'></div>`);
 
       try {
@@ -86,13 +81,16 @@
         });
 
         const data = await res.json();
-
-        // Remove spinner
         chat.querySelectorAll('.spinner').forEach(s => s.remove());
 
         if (data.erro) {
           addMensagem(`❌ ${data.erro}`);
           return;
+        }
+
+        // Limpa CNPJ duplicado no nome
+        if (data.responsavel) {
+          data.responsavel = data.responsavel.replace(/\d+/g, '').trim();
         }
 
         iniciarFluxo(data);
@@ -105,7 +103,6 @@
     function iniciarFluxo(data) {
       addMensagem(`Olá, ${data.responsavel || 'empreendedor(a)'}!`);
 
-      // Status cadastral
       if (data.status === 'ativo') {
         addMensagem("✅ Seu CNPJ está ativo na Receita Federal. Identificamos, no entanto, possíveis guias mensais pendentes.");
       } else if (data.status === 'baixado') {
@@ -114,7 +111,6 @@
         addMensagem("❌ Seu CNPJ está inapto perante a Receita Federal devido a pendências.");
       }
 
-      // Outras informações vindas da API
       addMensagem(`📌 Situação do enquadramento: ${data.situacao_enquadramento}`);
       addMensagem(`📄 Declaração anual: ${data.declaracao_anual}`);
       addMensagem(`💰 Dívida ativa: ${data.divida_ativa}`);
@@ -123,6 +119,7 @@
       mostrarOpcoes(["Continuar diagnóstico"], (opcao) => {
         addMensagem(opcao, 'user');
         addMensagem("📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...");
+        mostrarBotoesFinais();
       });
     }
 
@@ -133,7 +130,7 @@
       opcoes.forEach(op => {
         const btn = document.createElement('button');
         btn.innerText = op;
-        btn.style.background = "#17e30d"; // botão verde
+        btn.style.background = "#17e30d";
         btn.style.color = "#000";
         btn.onclick = () => {
           div.remove();
@@ -141,6 +138,33 @@
         };
         div.appendChild(btn);
       });
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function mostrarBotoesFinais() {
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = 'opcoes-botoes';
+
+      const btnWhats = document.createElement('button');
+      btnWhats.innerText = "Iniciar regularização";
+      btnWhats.style.background = "#25D366";
+      btnWhats.style.color = "#fff";
+      btnWhats.onclick = () => {
+        window.open('https://wa.me/55SEUNUMEROAQUI?text=Quero%20iniciar%20a%20regulariza%C3%A7%C3%A3o%20do%20meu%20CNPJ', '_blank');
+      };
+
+      const btnNovo = document.createElement('button');
+      btnNovo.innerText = "Consultar novo CNPJ";
+      btnNovo.style.background = "#0f3efa";
+      btnNovo.style.color = "#fff";
+      btnNovo.onclick = () => {
+        location.reload();
+      };
+
+      div.appendChild(btnWhats);
+      div.appendChild(btnNovo);
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
@@ -153,6 +177,9 @@
       border-radius: 50%;
       vertical-align: middle;
       margin-right: 8px;
+    }
+    .opcoes-botoes {
+      margin-top: 10px;
     }
     .opcoes-botoes button {
       margin: 4px;
