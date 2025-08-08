@@ -31,12 +31,13 @@
   </div>
 
   <script>
-    // Função para limpar pontuação e deixar só números
+    const avatarBot = "https://i.ibb.co/b5h1V8nd/i-cone.png";
+    const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";
+
     function limparMascara(cnpj) {
       return cnpj.replace(/\D/g, '');
     }
 
-    // Máscara ao digitar
     document.getElementById('cnpjInput').addEventListener('input', function (e) {
       let v = e.target.value.replace(/\D/g, '').slice(0, 14);
       if (v.length > 2) v = v.replace(/(\d{2})(\d)/, '$1.$2');
@@ -46,20 +47,28 @@
       e.target.value = v;
     });
 
+    function addMensagem(texto, autor = 'bot') {
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
+      div.innerHTML = `<img src="${autor === 'bot' ? avatarBot : avatarUser}" class="avatar"> <span>${texto}</span>`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
     async function consultarCNPJ() {
       const input = document.getElementById('cnpjInput');
       const cnpjLimpo = limparMascara(input.value);
-      const chat = document.getElementById('resultado');
 
-      chat.innerHTML = '';
+      document.getElementById('resultado').innerHTML = '';
 
-      // Validação do CNPJ
       if (!cnpjLimpo || cnpjLimpo.length !== 14 || !/^\d+$/.test(cnpjLimpo)) {
-        chat.innerHTML = `<div class='msg-bot'>⚠️ Digite um CNPJ válido com 14 números.</div>`;
+        addMensagem("⚠️ Digite um CNPJ válido com 14 números.");
         return;
       }
 
-      chat.innerHTML = `<div class='msg-user'>${input.value}</div><div class='spinner'></div>`;
+      addMensagem(input.value, 'user');
+      addMensagem(`<div class='spinner'></div>`);
 
       try {
         const res = await fetch('/consultar', {
@@ -69,71 +78,75 @@
         });
 
         const data = await res.json();
-        chat.innerHTML = '';
+        document.getElementById('resultado').innerHTML = '';
 
         if (data.erro) {
-          chat.innerHTML = `<div class='msg-bot'>❌ ${data.erro}</div>`;
+          addMensagem(`❌ ${data.erro}`);
           return;
         }
 
-        if (data.captcha) {
-          chat.innerHTML += `
-            <div class='msg-bot'>🧩 Precisamos que você resolva este CAPTCHA antes de continuar:</div>
-            <img class="captcha" src="data:image/png;base64,${data.captcha}" style="width:200px;" alt="Imagem do captcha" />
-            <input id="captchaInput" placeholder="Digite o texto da imagem" aria-label="Campo para resposta do captcha" />
-            <button onclick="enviarCaptcha('${cnpjLimpo}')">Enviar</button>
-          `;
-        } else {
-          mostrarMensagemFinal(data);
-        }
+        iniciarFluxo(data);
       } catch (err) {
-        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao consultar: ${err.message}</div>`;
+        addMensagem(`❌ Erro ao consultar: ${err.message}`);
       }
     }
 
-    async function enviarCaptcha(cnpj) {
-      const captcha = document.getElementById('captchaInput').value;
-      const chat = document.getElementById('resultado');
-      chat.innerHTML += `<div class='msg-user'>${captcha}</div><div class='spinner'></div>`;
-
-      try {
-        const res = await fetch('/consultar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cnpj, captcha })
-        });
-
-        const data = await res.json();
-        mostrarMensagemFinal(data);
-      } catch (err) {
-        chat.innerHTML = `<div class='msg-bot'>❌ Erro ao enviar captcha: ${err.message}</div>`;
-      }
-    }
-
-    function mostrarMensagemFinal(data) {
-      const chat = document.getElementById('resultado');
-      let msg = '';
-
+    function iniciarFluxo(data) {
       if (data.status === 'ativo') {
-        msg = "✅ Seu CNPJ está <b>ativo</b> na Receita Federal. Há pendências que podem ser regularizadas.";
+        addMensagem("Confirmamos que seu CNPJ está ativo na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais pendentes.");
       } else if (data.status === 'baixado') {
-        msg = "⚠️ Seu CNPJ está <b>baixado</b> na Receita Federal. Ainda existem tributos mensais não quitados.";
+        addMensagem("Seu CNPJ está baixado (encerrado) na Receita Federal. Mesmo com o CNPJ baixado, ainda existem valores em aberto que precisam ser regularizados.");
       } else if (data.status === 'inapto') {
-        msg = "🚫 Seu CNPJ está <b>inapto</b> na Receita Federal devido a pendências.";
-      } else if (data.status === 'captcha_incorreto') {
-        msg = "❌ O captcha informado está incorreto. Tente novamente.";
+        addMensagem("Seu CNPJ está inapto perante a Receita Federal devido a pendências existentes.");
       } else {
-        msg = "❌ Não conseguimos identificar o status do seu CNPJ.";
+        addMensagem("❌ Não conseguimos identificar o status do seu CNPJ.");
       }
 
-      if (data.valor_regularizacao) {
-        msg += `<br><br>💰 <b>Valor para regularização:</b> ${data.valor_regularizacao}`;
-        msg += `<br><br>📞 Para prosseguir, fale agora com um especialista do CNPJ Legal no WhatsApp: 
-                <a href="https://wa.me/5511999999999" target="_blank">Clique aqui</a>`;
-      }
+      // Exemplo de botão para continuar
+      mostrarOpcoes(["Continuar diagnóstico"], (opcao) => {
+        addMensagem(opcao, 'user');
+        addMensagem("📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...");
+      });
+    }
 
-      chat.innerHTML += `<div class='msg-bot'>${msg}</div>`;
+    function mostrarOpcoes(opcoes, callback) {
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = 'opcoes-botoes';
+      opcoes.forEach(op => {
+        const btn = document.createElement('button');
+        btn.innerText = op;
+        btn.onclick = () => {
+          div.remove();
+          callback(op);
+        };
+        div.appendChild(btn);
+      });
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
     }
   </script>
+
+  <style>
+    .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    .opcoes-botoes button {
+      margin: 4px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 16px;
+      background: #0f3efa;
+      color: white;
+      cursor: pointer;
+    }
+    .opcoes-botoes button:hover {
+      background: #0c2ecc;
+    }
+  </style>
 </body>
 </html>
