@@ -10,22 +10,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    /* Botão de download */
+    /* Botão de download compacto e bem posicionado */
     .btn-download {
       position: absolute;
-      top: -32px;
+      top: -20px;
       right: 10px;
       background-color: #555;
       color: #fff;
       border: none;
-      padding: 5px 10px;
+      padding: 5px 8px;
       font-size: 12px;
-      border-radius: 12px;
+      border-radius: 8px;
       cursor: pointer;
-      display: none;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
       z-index: 20;
+      display: none;
       white-space: nowrap;
     }
     .btn-download:hover {
@@ -37,11 +37,11 @@
       fill: #fff;
     }
 
-    /* Card branco ajustado */
+    /* Card branco encostado no preto */
     .container {
       position: relative;
       max-width: 480px;
-      margin: -25px auto 40px; /* sobe o card e reduz o espaço */
+      margin: -30px auto 40px; /* encosta no card preto */
       background: #fff;
       color: #000;
       padding: 30px;
@@ -153,7 +153,7 @@
         ultimoDiagnostico = data;
         iniciarFluxo(data);
 
-        // Exibe botão de download
+        // Exibir botão de download
         document.getElementById("btnDownload").style.display = "flex";
       } catch (err) {
         document.getElementById('loadingSpinner')?.remove();
@@ -163,10 +163,78 @@
 
     function iniciarFluxo(data) {
       addMensagem(`Olá, ${data.responsavel || 'empreendedor(a)'}!`);
+      if (data.status === 'ativo') {
+        addMensagem("✅ Seu CNPJ está ativo na Receita Federal. Possíveis guias mensais pendentes.");
+      } else if (data.status === 'baixado') {
+        addMensagem("⚠️ CNPJ baixado na Receita Federal. Ainda existem pendências.");
+      } else if (data.status === 'inapto') {
+        addMensagem("❌ CNPJ inapto perante a Receita Federal devido a pendências.");
+      }
       addMensagem(`📌 Situação do enquadramento: ${data.situacao_enquadramento}`);
       addMensagem(`📄 Declaração anual: ${data.declaracao_anual}`);
       addMensagem(`💰 Dívida ativa: ${data.divida_ativa}`);
       addMensagem(`💳 Valor estimado para regularização: ${data.valor_regularizacao}`);
+
+      mostrarOpcoes(["Continuar diagnóstico"], (opcao) => {
+        addMensagem(opcao, 'user');
+        addMensagem("📋 Agora vamos verificar se há dívida ativa vinculada ao seu CPF...");
+        mostrarBotoesFinais();
+      });
+    }
+
+    function mostrarOpcoes(opcoes, callback) {
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = 'opcoes-botoes';
+      opcoes.forEach(op => {
+        const btn = document.createElement('button');
+        btn.innerText = op;
+        btn.classList.add("verde");
+        btn.onclick = () => {
+          div.remove();
+          callback(op);
+        };
+        div.appendChild(btn);
+      });
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function mostrarBotoesFinais() {
+      const chat = document.getElementById('resultado');
+      const div = document.createElement('div');
+      div.className = 'opcoes-botoes';
+
+      const mensagemWhats = `Realizei o diagnóstico automático e quero dar continuidade à regularização.
+
+CNPJ: ${ultimoCNPJ}
+Nome/Razão Social: ${ultimoDiagnostico.responsavel || 'Não informado'}
+Status: ${ultimoDiagnostico.status || 'Não informado'}
+Enquadramento: ${ultimoDiagnostico.situacao_enquadramento || 'Não informado'}
+Declaração anual: ${ultimoDiagnostico.declaracao_anual || 'Não informado'}
+Dívida ativa: ${ultimoDiagnostico.divida_ativa || 'Não informado'}
+Valor estimado para regularização: ${ultimoDiagnostico.valor_regularizacao || 'Não informado'}`;
+
+      const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent(mensagemWhats)}`;
+
+      const btnWhats = document.createElement('button');
+      btnWhats.innerText = "Iniciar regularização";
+      btnWhats.classList.add("verde");
+      btnWhats.onclick = () => {
+        window.open(linkWhats, '_blank');
+      };
+
+      const btnNovo = document.createElement('button');
+      btnNovo.innerText = "Consultar novo CNPJ";
+      btnNovo.classList.add("azul");
+      btnNovo.onclick = () => {
+        location.reload();
+      };
+
+      div.appendChild(btnWhats);
+      div.appendChild(btnNovo);
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
     }
 
     function gerarPDF() {
