@@ -1,10 +1,10 @@
 // =========================
 // CONFIG
 // =========================
-const USE_PGFN = false; // deixe false enquanto não contratar a API da PGFN
+const USE_PGFN = false; // deixamos desativado (pula Etapa 2 automática)
 
 // =========================
-/* AVATARES */
+// AVATARES
 // =========================
 const avatarBot  = "https://i.ibb.co/b5h1V8nd/i-cone.png";            // CNPJ Legal
 const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";  // Usuário
@@ -17,8 +17,8 @@ window.dadosCNPJ = {};
 window.diag = {
   tela1: null,                                   // Situação Cadastral (RFB/CNPJ)
   tela2: { status: USE_PGFN ? "PENDENTE" : "NAO_CONSULTADO", detalhes: null }, // PGFN/CPF
-  tela3: null,                                   // DASN-SIMEI (declaração anual) -> controlada por pergunta
-  tela4: null,                                   // PGMEI (débitos DAS)
+  tela3: { dasn_status: "NAO_PERGUNTADO" },      // DASN-SIMEI: "PENDENTE" | "EM_DIA" | "NAO_INFORMADO"
+  tela4: { das_em_aberto: "INDETERMINADO" },     // PGMEI (ignoramos consulta automática)
   tela5: null                                    // SIMEI/Simples (enquadramento)
 };
 
@@ -30,38 +30,28 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 function limparMascara(cnpj) {
   return (cnpj || "").replace(/\D/g, "");
 }
-
 function safeText(v) {
   return String(v ?? "").replace(/<[^>]*>?/gm, "").trim();
 }
 
-// Adiciona bolha com avatar (bot ou user)
+// bolha + avatar
 function addMensagem(texto, autor = 'bot') {
   const clean = safeText(texto);
   if (!clean) return;
-
   const chat = document.getElementById('resultado');
   const div = document.createElement('div');
   div.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
   const avatar = autor === 'bot' ? avatarBot : avatarUser;
-
-  div.innerHTML = `
-    <img src="${avatar}" class="avatar" alt="${autor}">
-    <span>${clean}</span>
-  `;
+  div.innerHTML = `<img src="${avatar}" class="avatar" alt="${autor}"><span>${clean}</span>`;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
 
-// --- Animação de digitação do bot ("...") ---
 function startTyping() {
   const chat = document.getElementById('resultado');
   const wrap = document.createElement('div');
   wrap.className = 'msg-bot';
-  wrap.innerHTML = `
-    <img src="${avatarBot}" class="avatar" alt="bot">
-    <span class="typing-dots">...</span>
-  `;
+  wrap.innerHTML = `<img src="${avatarBot}" class="avatar" alt="bot"><span class="typing-dots">...</span>`;
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
 
@@ -79,12 +69,26 @@ function stopTyping(t) {
   clearInterval(t.itv);
   t.node.remove();
 }
-// Helper: bot "digita" e depois envia a mensagem
-async function botSay(texto, delay = 500) {
+async function botSay(texto, delay = 450) {
   const t = startTyping();
   await sleep(delay);
   stopTyping(t);
   addMensagem(texto, 'bot');
+}
+
+function mostrarBotoes(opcoes) {
+  const chat = document.getElementById('resultado');
+  const div  = document.createElement('div');
+  div.className = 'opcoes-botoes';
+  opcoes.forEach(({label, classe = '', onClick}) => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    if (classe) btn.classList.add(classe);
+    btn.onclick = () => { div.remove(); onClick && onClick(); };
+    div.appendChild(btn);
+  });
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
 
 // =========================
@@ -108,23 +112,17 @@ async function consultarCNPJ() {
   const chat  = document.getElementById('resultado');
 
   const cnpj = limparMascara(input.value);
-
-  // limpa chat
   chat.innerHTML = '';
 
   if (!cnpj || cnpj.length !== 14) {
-    await botSay("Digite um CNPJ válido com 14 números.", 300);
+    await botSay("Digite um CNPJ válido com 14 números.");
     return;
   }
 
-  // mostra mensagem do usuário com avatar
   addMensagem(input.value, 'user');
-
-  // esconde input/botão
   input.style.display = 'none';
   botao.style.display = 'none';
 
-  // spinner
   const spinner = document.createElement('div');
   spinner.className = 'spinner';
   spinner.id = 'loadingSpinner';
@@ -140,8 +138,7 @@ async function consultarCNPJ() {
     document.getElementById('loadingSpinner')?.remove();
 
     if (data.erro) {
-      await botSay(data.erro, 300);
-      // reexibe para nova tentativa
+      await botSay(data.erro);
       input.style.display = '';
       botao.style.display = '';
       return;
@@ -150,265 +147,315 @@ async function consultarCNPJ() {
     ultimoCNPJ = input.value;
     window.dadosCNPJ = data;
 
-    // NORMALIZAÇÕES/DEFAULTS para manter o fluxo até integrar tudo:
+    // NORMALIZAÇÕES
     const status = safeText(data.status || data.situacao || "");
-    const simplesOptante = !!(data.simples_optante ?? data.simei?.optante ?? data.company?.simei?.optant);
-    // T3 agora é decidido por PERGUNTA ao usuário (não inferir aqui)
-    const dasAbertas     = Number(data.pgmei_total_em_aberto ?? 0);
-
-    // Grava no diag
+    const simeiOptante = !!(data.simei?.optante ?? data.company?.simei?.optant ?? data.simples_optante);
+    // Etapa 4: não chutamos 0 — deixamos INDETERMINADO
     window.diag.tela1 = { status: status || "—" };
-    window.diag.tela3 = { dasn_status: "NAO_INFORMADO" }; // será definido pela pergunta
-    window.diag.tela4 = { das_em_aberto: dasAbertas };
-    window.diag.tela5 = { simei_optante: simplesOptante };
+    window.diag.tela5 = { simei_optante: simeiOptante };
+    window.diag.tela4 = { das_em_aberto: "INDETERMINADO" };
 
-    // mostra botões fixos (canto inferior direito)
+    // mostra botões globais
     document.getElementById('btnDownload')?.classList.add('show');
     const btnReg = document.getElementById('btnRegularizar');
-    if (btnReg) {
-      btnReg.classList.add('show');
-      btnReg.onclick = enviarWhatsApp; // garante ação correta
-    }
+    if (btnReg) { btnReg.classList.add('show'); btnReg.onclick = enviarWhatsApp; }
 
-    await iniciarConversa(data);
+    await fluxoDiagnostico();
 
   } catch (err) {
     document.getElementById('loadingSpinner')?.remove();
-    await botSay("Erro ao consultar dados. Tente novamente mais tarde.", 300);
-    // reexibe entrada
+    await botSay("Erro ao consultar dados. Tente novamente mais tarde.");
     input.style.display = '';
     botao.style.display = '';
   }
 }
 
 // =========================
-// FLUXO DE MENSAGENS
+// ETAPAS DO DIAGNÓSTICO
 // =========================
-function statusMensagem(status) {
-  const s = (status || "").toLowerCase();
-  if (s.includes('ativo'))  return "Situação cadastral: ativo.";
-  if (s.includes('baixado'))return "Situação cadastral: baixado.";
-  if (s.includes('inapto')) return "Situação cadastral: inapto.";
-  return "Situação cadastral: não identificada.";
-}
-
-async function iniciarConversa(data) {
-  const nome = safeText(data.responsavel) || "";
-  if (nome) await botSay(`Olá, ${nome}.`);
-  else      await botSay("Olá.");
-
-  if (window.diag.tela1?.status) await botSay(statusMensagem(window.diag.tela1.status));
-  if (window.diag.tela5) {
-    await botSay(`Enquadramento: ${window.diag.tela5.simei_optante ? "MEI (SIMEI)" : "desenquadrado do MEI"}.`);
+function textoT1(statusLower) {
+  if (statusLower.includes('ativo')) {
+    return "Confirmamos que seu CNPJ está **ativo** na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais **pendentes**.";
   }
-
-  // === Perguntar sobre a DASN (Tela 3) ===
-  await perguntarDASN(); // define window.diag.tela3 conforme resposta
-
-  // T4 — PGMEI (DAS em aberto)
-  if (window.diag.tela4) {
-    await botSay(`Guias DAS em aberto: ${window.diag.tela4.das_em_aberto}.`);
+  if (statusLower.includes('baixado')) {
+    return "Seu CNPJ está **baixado** (encerrado) na Receita Federal. Mesmo com o CNPJ baixado, ainda existem **valores em aberto** que precisam ser regularizados.";
   }
-
-  // Observação: PGFN é pulado no chat (USE_PGFN = false). Vai para o PDF.
-
-  // Botão "Continuar diagnóstico"
-  mostrarOpcoes(["Continuar diagnóstico"], async () => {
-    addMensagem("Continuar diagnóstico", "user");
-
-    // Proposta automática (valores já atualizados)
-    const proposta = gerarPropostaComBaseNoDiagnostico(window.diag);
-    await botSay(`Proposta sugerida: ${proposta.titulo} — ${proposta.valor}`);
-    await botSay("Você pode iniciar a regularização ou consultar um novo CNPJ.");
-
-    mostrarBotoesFinais();
-  });
+  if (statusLower.includes('inapto')) {
+    return "Seu CNPJ está **inapto** perante a Receita Federal devido a **pendências existentes**.";
+  }
+  return "Não foi possível identificar a situação cadastral com precisão neste momento.";
 }
 
-// Pergunta da DASN com 3 botões: "Ainda não", "Já declarei", "Não sei"
-async function perguntarDASN() {
-  // mostra pergunta
-  await botSay("Você entregou a Declaração Anual de Faturamento (DASN-SIMEI) do ano passado?");
-
-  return new Promise((resolve) => {
-    const chat = document.getElementById('resultado');
-    const div  = document.createElement('div');
-    div.className = 'opcoes-botoes';
-
-    const addBtn = (label, onClick, verde=false) => {
-      const b = document.createElement('button');
-      b.textContent = label;
-      if (verde) b.classList.add('verde');
-      b.onclick = () => {
-        div.remove();
-        addMensagem(label, 'user');
-        onClick();
-        resolve();
-      };
-      div.appendChild(b);
-    };
-
-    addBtn("Ainda não", async () => {
-      window.diag.tela3 = { dasn_status: "PENDENTE" };
-      await botSay("Declaração Anual (DASN-SIMEI): pendente.");
-    }, true);
-
-    addBtn("Já declarei", async () => {
-      window.diag.tela3 = { dasn_status: "EM_DIA" };
-      await botSay("Declaração Anual (DASN-SIMEI): informada como entregue. Será validado por um especialista na regularização.");
-    });
-
-    addBtn("Não sei", async () => {
-      window.diag.tela3 = { dasn_status: "NAO_INFORMADO" };
-      // não falar nada no chat; segue o fluxo
-    });
-
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  });
+function textoT2_padrao() {
+  return [
+    "Devido ao não pagamento das taxas mensais do seu CNPJ, a dívida foi **transferida para o seu CPF**, tornando-se uma **dívida ativa com a Receita Federal**.",
+    "",
+    "A dívida ativa pode acarretar sérias consequências como:",
+    "- Bloqueio de contas bancárias",
+    "- Bloqueio de maquininhas de cartão",
+    "- Impedimento de emissão de notas fiscais",
+    "- Penhora de bens",
+    "- Inclusão em cadastros de inadimplentes (SPC/SERASA)",
+    "- Envio da dívida para cartório, gerando custos adicionais",
+    "",
+    "**Temos uma solução:** É possível conseguir **até 50% de desconto** e **parcelar o saldo restante em até 60 vezes**, facilitando a regularização e evitando que essas consequências ocorram."
+  ].join("\n");
 }
 
-function mostrarOpcoes(opcoes, callback) {
-  const chat = document.getElementById('resultado');
-  const div  = document.createElement('div');
-  div.className = 'opcoes-botoes';
-
-  opcoes.forEach(op => {
-    const btn = document.createElement('button');
-    btn.textContent = op;
-    btn.classList.add('verde'); // verde no chat
-    btn.onclick = () => { div.remove(); callback(op); };
-    div.appendChild(btn);
-  });
-
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+function textoT3_porResposta(resposta, statusLower) {
+  // resposta: "AINDA_NAO" | "JA_DECLAREI" | "NAO_SEI"
+  if (statusLower.includes('baixado')) {
+    // TEXTO3DECLARACAOESPECIAL
+    return "Adicionalmente, a **declaração anual especial de faturamento**, necessária devido ao encerramento do CNPJ, **não foi apresentada**. O prazo para essa entrega já se esgotou; existe a possibilidade de multa de **R$ 50**.";
+  }
+  if (resposta === "AINDA_NAO") {
+    // TEXTO3 DECLARACAO ANUAL
+    return "Também identifiquei que a **Declaração Anual de Faturamento** do seu CNPJ **está pendente**. A não entrega pode resultar em multa de aproximadamente **R$ 25,00**.";
+  }
+  if (resposta === "JA_DECLAREI") {
+    return "A Declaração Anual de Faturamento **foi informada como entregue**. Um especialista do CNPJ Legal **validará essa informação** no processo de regularização.";
+  }
+  // NAO_SEI
+  return "A situação da **Declaração Anual de Faturamento** não foi informada. Um especialista do CNPJ Legal **verificará isso** no processo de regularização.";
 }
 
-function mostrarBotoesFinais() {
-  const chat = document.getElementById('resultado');
-  const div  = document.createElement('div');
-  div.className = 'opcoes-botoes';
-  div.style.display   = 'flex';
-  div.style.gap       = '10px';
-  div.style.marginTop = '10px';
-
-  const d = window.dadosCNPJ || {};
-  const p = gerarPropostaComBaseNoDiagnostico(window.diag);
-
-  const msg = `Realizei o diagnóstico automático e quero regularizar.%0A` +
-              `CNPJ: ${d.cnpj || ultimoCNPJ || ""}%0A` +
-              `Status: ${window.diag.tela1?.status || ""}%0A` +
-              `Proposta: ${p.titulo} — ${p.valor}`;
-
-  const btnWhats = document.createElement('button');
-  btnWhats.textContent = "Iniciar regularização";
-  btnWhats.classList.add('verde'); // verde no final
-  btnWhats.style.flex = "1";
-  btnWhats.onclick = () => window.open(`https://wa.me/554396015785?text=${msg}`, '_blank');
-
-  const btnNovo = document.createElement('button');
-  btnNovo.textContent = "Consultar novo CNPJ";
-  btnNovo.style.flex  = "1";
-  btnNovo.onclick = () => location.reload();
-
-  div.appendChild(btnWhats);
-  div.appendChild(btnNovo);
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+function textoT5(statusLower, simeiOpt) {
+  if ((statusLower.includes('ativo') || statusLower.includes('inapto')) && simeiOpt === true) {
+    // ENQUADRADO MEI
+    return [
+      "A notícia positiva é que seu CNPJ **não foi desenquadrado do MEI**. Precisamos apenas regularizar as pendências para retornar à situação regular.",
+      "Lembre-se: se não regularizar, pode haver desenquadramento e migração para regimes com **impostos mais altos** e **mais burocracia**."
+    ].join("\n\n");
+  }
+  if (statusLower.includes('ativo') && simeiOpt === false) {
+    // DESENQ SIMPLES ATIVO
+    return [
+      "Identificamos que seu CNPJ foi **desenquadrado do MEI (SIMEI)** e agora está no **Simples Nacional**. Implicações:",
+      "- Impostos calculados sobre o faturamento (mínimo **6%** para serviços).",
+      "- **Declarações mensais e anuais** do Simples são obrigatórias; a falta gera **multas**."
+    ].join("\n");
+  }
+  if (statusLower.includes('inapto') && simeiOpt === false) {
+    // DESENQ SIMPLES INAPTO
+    return [
+      "Seu CNPJ está **inapto** e **desenquadrado do MEI**, estando no **Simples Nacional**. Implicações:",
+      "- Impostos sobre o faturamento (mínimo **6%** para serviços).",
+      "- Para regularizar e **permitir a baixa**, será necessário entregar as **declarações** do período em que esteve desenquadrado, mesmo sem movimento.",
+      "- A falta de declarações gera **multas**."
+    ].join("\n");
+  }
+  // Quando não é mais MEI nem Simples (LP) — precisamos inferir pelo texto de origem; aqui simplificamos:
+  if (statusLower.includes('ativo') && simeiOpt === null) {
+    return [
+      "**Alerta importante!** Devido às pendências, o CNPJ está em regime **não MEI/fora do Simples (ex.: Lucro Presumido)**.",
+      "Regime mais complexo: contador mensal, impostos mais altos (mínimo **13,33%** para serviços) e multas por declarações não entregues."
+    ].join("\n");
+  }
+  if (statusLower.includes('inapto') && simeiOpt === null) {
+    return [
+      "**Alerta importante!** CNPJ **inapto** e fora do MEI/Simples (ex.: **Lucro Presumido**).",
+      "Para regularizar e conseguir **baixar**, será necessário entregar declarações complexas (ex.: **DCTF, DCTFweb, ECF**), mesmo sem movimento. Impostos mais altos (mínimo **13,33%** para serviços)."
+    ].join("\n");
+  }
+  // fallback
+  return "Situação de enquadramento não identificada com precisão neste momento.";
 }
 
 // =========================
-// PROPOSTA AUTOMÁTICA (R$ 399)
+// FLUXO
+// =========================
+async function fluxoDiagnostico() {
+  const status = (window.diag.tela1?.status || "").toLowerCase();
+  const simei  = window.diag.tela5?.simei_optante;
+  const nome   = safeText(window.dadosCNPJ?.responsavel || window.dadosCNPJ?.company?.name || "");
+
+  await botSay(nome ? `Olá, ${nome}.` : "Olá.");
+
+  // TELA 1 — Situação Cadastral
+  await botSay(textoT1(status));
+
+  // TELA 2 — Dívida Ativa (mensagem padrão)
+  await botSay(textoT2_padrao());
+
+  // TELA 3 — Perguntar DASN (Ativa/Inapta) | Baixada usa texto especial
+  if (status.includes('baixado')) {
+    await botSay(textoT3_porResposta("AINDA_NAO", "baixado")); // usa a “Declaração Especial” automaticamente
+  } else {
+    await perguntarDASN(status); // coleta “Ainda não / Já declarei / Não sei”
+  }
+
+  // TELA 4 — Ignorada (não consultamos). Mantemos INDETERMINADO na ficha/PDF.
+
+  // TELA 5 — Enquadramento (mensagem por status + simei)
+  await botSay(textoT5(status, simei === true ? true : (simei === false ? false : null)));
+
+  // Proposta e CTA
+  const proposta = gerarPropostaComBaseNoDiagnostico(window.diag);
+  await botSay(`**Proposta sugerida:** ${proposta.titulo} — ${proposta.valor}`);
+  await botSay(
+    "Para prosseguir, você deverá **efetuar o pagamento assim que o processo for concluído e a situação estiver 100% regularizada**. " +
+    "Todo esse processo é **concluído hoje mesmo**. Se estiver ciente e quiser continuar, clique em **Quero prosseguir**."
+  );
+
+  mostrarBotoes([
+    { label: "Quero prosseguir", classe: "verde", onClick: async () => iniciarDocEWhatsapp(proposta) },
+    { label: "Consultar outro CNPJ", onClick: () => location.reload() }
+  ]);
+}
+
+async function perguntarDASN(statusLower) {
+  await botSay("Sobre a **Declaração Anual de Faturamento (DASN-SIMEI)** do ano passado, você já entregou?");
+  mostrarBotoes([
+    { label: "Ainda não", onClick: async () => {
+        window.diag.tela3.dasn_status = "PENDENTE";
+        await botSay(textoT3_porResposta("AINDA_NAO", statusLower));
+        fluxoContinuaDepoisDASN();
+      }},
+    { label: "Já declarei", onClick: async () => {
+        window.diag.tela3.dasn_status = "EM_DIA";
+        await botSay(textoT3_porResposta("JA_DECLAREI", statusLower));
+        fluxoContinuaDepoisDASN();
+      }},
+    { label: "Não sei", onClick: async () => {
+        window.diag.tela3.dasn_status = "NAO_INFORMADO";
+        await botSay(textoT3_porResposta("NAO_SEI", statusLower));
+        fluxoContinuaDepoisDASN();
+      }},
+  ]);
+}
+
+async function fluxoContinuaDepoisDASN() {
+  // Apenas um placeholder pra manter a ordem do fluxo (T4 ignorado)
+  // nada aqui — T5 é chamado pelo fluxo principal logo após a coleta
+}
+
+// =========================
+// PROPOSTA AUTOMÁTICA (R$ 399 unit / 2x de 399 quando aplicável)
 // =========================
 function gerarPropostaComBaseNoDiagnostico(diag) {
-  const VAL_UNIT = 399;
-  const PARC_DUPLA = `2× de R$ ${VAL_UNIT}, total R$ ${VAL_UNIT*2}`;
+  const VAL = 399;
+  const DUAS_PARCELAS = `2× de R$ ${VAL}, total R$ ${VAL*2}`;
 
-  const status = (diag.tela1?.status || "").toLowerCase();
-  const ativo   = status.includes("ativo");
-  const inapto  = status.includes("inapto");
-  const baixado = status.includes("baixado");
+  const st = (diag.tela1?.status || "").toLowerCase();
+  const ativo   = st.includes("ativo");
+  const inapto  = st.includes("inapto");
+  const baixado = st.includes("baixado");
+  const simei   = diag.tela5?.simei_optante;
 
-  const simei     = !!diag.tela5?.simei_optante;
-  const dasnInfo  = diag.tela3?.dasn_status || "NAO_INFORMADO";
-  const dasAbert  = Number(diag.tela4?.das_em_aberto || 0);
-
-  // 1) MEI ativo/inapto (continua MEI)
-  if ((ativo || inapto) && simei) {
+  // MEI ativo ou inapto (continua MEI)
+  if ((ativo || inapto) && simei === true) {
     return {
       keyword: "/PROPOSTA REGULARIZAR MEI",
       titulo:  "Regularização MEI",
-      valor:   `R$ ${VAL_UNIT}`,
+      valor:   `R$ ${VAL}`,
+      docTipo: "SIMPLES", // para mensagem de documentos
       corpo: [
-        "Parcelamento das guias DAS em aberto.",
-        "Entrega das declarações anuais (DASN-SIMEI) pendentes.",
-        "Orientações para manter o CNPJ regular.",
-        "Pagamento após confirmação com especialista. Pix/cartão (até 10x)."
-      ],
-      tipo: "MEI"
+        "Parcelamento da Dívida Ativa no CPF (com redução e parcelamento prolongado).",
+        "Parcelamento das guias DAS em aberto no CNPJ.",
+        "Entrega das DASN-SIMEI pendentes."
+      ]
     };
   }
 
-  // 2) Já baixado (foco dívida CPF)
+  // CNPJ já baixado (foco na dívida do CPF)
   if (baixado) {
     return {
       keyword: "/PROPOSTA CNPJ JA BAIXADO",
       titulo:  "Negociação de dívida vinculada ao CPF (CNPJ baixado)",
-      valor:   `R$ ${VAL_UNIT}`,
+      valor:   `R$ ${VAL}`,
+      docTipo: "SIMPLES",
       corpo: [
-        "Negociação e parcelamento prolongado da dívida vinculada ao CPF.",
-        "Prevenção de protesto em cartório e outros agravamentos.",
-        "Pagamento após negociação; Pix/cartão (até 10x)."
-      ],
-      tipo: "BAIXADO"
+        "Negociação/parcelamento prolongado da dívida do CPF.",
+        "Prevenção de protesto/cartório e demais restrições."
+      ]
     };
   }
 
-  // 3) Ativo desenquadrado do MEI (1ª fase de regularização MEI)
-  if (ativo && !simei) {
+  // Ativo desenquadrado do MEI (1ª fase – regularizar período MEI)
+  if (ativo && simei === false) {
     return {
       keyword: "/PROPOSTA REGUL ATIVO DESENQ",
-      titulo:  "1ª fase – Regularização do período MEI",
-      valor:   `R$ ${VAL_UNIT}`,
+      titulo:  "1ª fase — Regularização do período MEI",
+      valor:   `R$ ${VAL}`,
+      docTipo: "SIMPLES",
       corpo: [
         "Análise fiscal completa.",
-        "Regularização de DAS em aberto do período MEI.",
-        "Entrega de DASN-SIMEI em atraso.",
-        "Orientações sobre o regime atual (SN/LP)."
-      ],
-      tipo: "ATIVO_DESENQ"
+        "Regularização de DAS do período MEI.",
+        "Entrega de DASN-SIMEI pendentes.",
+        "Orientação inicial sobre o regime atual (SN/LP)."
+      ]
     };
   }
 
-  // 4) Regularizar e baixar CNPJ desenquadrado (duas parcelas)
+  // Regularizar e baixar (duas parcelas)
   if (!simei && (ativo || inapto)) {
     return {
-      keyword: ativo ? "/PROPOSTA BAIXA ATIVO DESENQ" : (inapto ? "/PROPOSTA BAIXA INAPTO SN" : "/PROPOSTA BAIXA ATIVO DESENQ"),
+      keyword: ativo ? "/PROPOSTA BAIXA ATIVO DESENQ" : "/PROPOSTA BAIXA INAPTO SN",
       titulo:  "Regularizar e Baixar o CNPJ",
-      valor:   PARC_DUPLA,
+      valor:   DUAS_PARCELAS,
+      docTipo: "COMPLETO",
       corpo: [
         "Etapa 1 (R$ 399): Regularização MEI (DAS + DASN).",
         "Etapa 2 (R$ 399): Baixa no regime atual (SN/LP) na Receita e Junta.",
-        "Prazo médio: ~15 dias úteis na 2ª etapa.",
-        "Opção de parcelamento no cartão até 10x."
-      ],
-      tipo: "BAIXA"
+        "Prazo médio da 2ª etapa: ~15 dias úteis."
+      ]
     };
   }
 
-  // fallback
+  // Fallback padrão
   return {
     keyword: "PROPOSTA PADRÃO",
     titulo:  "Regularização Fiscal",
-    valor:   `R$ ${VAL_UNIT}`,
+    valor:   `R$ ${VAL}`,
+    docTipo: "SIMPLES",
     corpo: [
       "Regularização de pendências identificadas.",
       "Entrega de declarações necessárias.",
       "Orientações para manter o CNPJ regular."
-    ],
-    tipo: "PADRAO"
+    ]
   };
+}
+
+// =========================
+// DOCS + CONFIRMAÇÃO + WHATSAPP
+// =========================
+async function iniciarDocEWhatsapp(proposta) {
+  // Mensagem de documentação conforme tipo
+  if (proposta.docTipo === "COMPLETO") {
+    await botSay([
+      "Excelente! Para iniciarmos o processo completo, precisamos:",
+      "- CPF",
+      "- Data de nascimento",
+      "- Nome completo da mãe",
+      "- Nome completo do pai",
+      "Uma foto do RG ou CNH (frente e verso, se necessário) geralmente contém tudo."
+    ].join("\n"));
+    await botSay(
+      "Após o envio, um especialista confirmará os detalhes e **solicitará o pagamento da primeira parte (R$ 399) somente após a negociação da Dívida Ativa**. " +
+      "A segunda parcela é paga na conclusão do processo."
+    );
+  } else {
+    await botSay([
+      "Ótimo! Para darmos o primeiro passo, precisamos de:",
+      "- Nome completo da mãe",
+      "- Nome completo do pai",
+      "- Data de nascimento",
+      "- CPF",
+      "Você pode enviar os dados digitados ou uma foto do RG/CNH (frente e verso, se necessário)."
+    ].join("\n"));
+    await botSay(
+      "Após recebermos, um especialista confirmará os próximos passos e **solicitará o pagamento (R$ 399) somente após a conclusão do processo hoje mesmo**, com o CNPJ **100% regularizado**."
+    );
+  }
+
+  // Confirmação final antes de abrir o Whats
+  await botSay(
+    "Se está **ciente** de que o pagamento será **efetuado após a conclusão hoje mesmo** e deseja prosseguir, clique abaixo:"
+  );
+  mostrarBotoes([
+    { label: "Prosseguir no WhatsApp", classe: "verde", onClick: enviarWhatsApp },
+    { label: "Consultar outro CNPJ", onClick: () => location.reload() }
+  ]);
 }
 
 // =========================
@@ -432,38 +479,26 @@ async function baixarConversa() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  // 1) Fonte Roboto p/ acentos
-  let loadedRoboto = false;
+  // Fonte
   try {
-    const fontUrl = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf"; // Roboto-Regular.ttf
+    const fontUrl = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf";
     const ab = await fetch(fontUrl).then(r => r.arrayBuffer());
-    const b64 = btoa(
-      Array.from(new Uint8Array(ab)).map(b => String.fromCharCode(b)).join("")
-    );
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
     doc.addFileToVFS("Roboto-Regular.ttf", b64);
     doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
     doc.setFont("Roboto", "normal");
-    loadedRoboto = true;
-  } catch (e) {
-    doc.setFont("helvetica", "normal");
-  }
+  } catch { doc.setFont("helvetica", "normal"); }
 
-  // helper: remove emojis/char fora da fonte
-  const sanitize = (s = "") =>
-    String(s).replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}]/gu, "");
+  const sanitize = (s = "") => String(s).replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}]/gu, "");
 
   const d = window.dadosCNPJ || {};
   const dataHora = new Date().toLocaleString("pt-BR");
 
-  // 2) Cabeçalho com logo
+  // Logo + header
   try {
     const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
     const logoBlob = await fetch(logoUrl).then(res => res.blob());
-    const logoData = await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(logoBlob);
-    });
+    const logoData = await new Promise(r => { const fr = new FileReader(); fr.onloadend = () => r(fr.result); fr.readAsDataURL(logoBlob); });
     doc.addImage(logoData, "PNG", 14, 10, 40, 15);
   } catch {}
 
@@ -473,51 +508,38 @@ async function baixarConversa() {
   doc.text(sanitize(`Gerado em: ${dataHora}`), 60, 24);
   doc.line(14, 28, 196, 28);
 
-  // 3) Tabela cadastral mínima (somente o que faz sentido ao diagnóstico)
-  const nomeEmpreendedor = d.responsavel || d.company?.members?.[0]?.person?.name || "";
+  // Bloco cadastral mínimo
   const linhasCadastrais = [
     ["CNPJ", d.cnpj || ultimoCNPJ || "—"],
     ["Razão Social", d.razao_social || d.company?.name || "—"],
-    ["Empreendedor", nomeEmpreendedor || "—"],
     ["Situação Cadastral", window.diag.tela1?.status || "—"],
-    ["Enquadramento", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" : (window.diag.tela5?.simei_optante === false ? "Desenquadrado do MEI" : "—")]
-  ].map(([k, v]) => [sanitize(k), sanitize(String(v))]);
+    ["Enquadramento", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" :
+                      window.diag.tela5?.simei_optante === false ? "Desenquadrado do MEI" : "—"]
+  ].map(([k,v]) => [sanitize(k), sanitize(String(v))]);
 
   if (doc.autoTable) {
     doc.autoTable({
       startY: 34,
-      head: [["Campo", "Informação"].map(sanitize)],
+      head: [["Campo", "Informação"]],
       body: linhasCadastrais,
       theme: "striped",
-      headStyles: { fillColor: [15, 62, 250], textColor: 255 },
+      headStyles: { fillColor: [15,62,250], textColor: 255 },
       styles: { fontSize: 10, cellPadding: 3 },
       columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 120 } },
     });
-  } else {
-    let y = 40;
-    doc.setFontSize(11);
-    linhasCadastrais.forEach(([k, v]) => {
-      doc.text(`${k}: ${v}`, 14, y);
-      y += 6;
-    });
   }
 
-  // 4) Resumo das 5 telas (inclui PGFN como "não consultado")
-  const dasnResumo = (() => {
-    const s = window.diag.tela3?.dasn_status;
-    if (s === "PENDENTE") return "Pendente";
-    if (s === "EM_DIA") return "Em dia";
-    if (s === "NAO_INFORMADO") return "Não informado";
-    return "—";
-  })();
-
+  // Resumo das 5 telas
   const dsum = [
     ["T1 — Situação Cadastral (RFB)", window.diag.tela1?.status || "—"],
-    ["T2 — Dívida Ativa (PGFN/CPF)", USE_PGFN ? (window.diag.tela2?.status || "—") : "Consulta não realizada nesta etapa"],
-    ["T3 — Declaração Anual (DASN-SIMEI)", dasnResumo],
-    ["T4 — Débitos DAS (PGMEI)", (window.diag.tela4?.das_em_aberto ?? "—")],
-    ["T5 — Enquadramento (SIMEI/SN/LP)", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" : (window.diag.tela5?.simei_optante === false ? "Desenquadrado do MEI" : "—")]
-  ].map(([k, v]) => [sanitize(k), sanitize(String(v))]);
+    ["T2 — Dívida Ativa (PGFN/CPF)", USE_PGFN ? (window.diag.tela2?.status || "—") : "Mensagem padrão orientativa"],
+    ["T3 — DASN-SIMEI", window.diag.tela3?.dasn_status === "PENDENTE" ? "Pendente" :
+                        window.diag.tela3?.dasn_status === "EM_DIA" ? "Em dia (a confirmar)" :
+                        window.diag.tela3?.dasn_status === "NAO_INFORMADO" ? "Não informado (a verificar)" : "—"],
+    ["T4 — Débitos DAS (PGMEI)", "Indeterminado (não consultado automaticamente)"],
+    ["T5 — Enquadramento (SIMEI/SN/LP)", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" :
+                                          window.diag.tela5?.simei_optante === false ? "Desenquadrado do MEI" : "—"]
+  ].map(([k,v]) => [sanitize(k), sanitize(String(v))]);
 
   if (doc.autoTable) {
     doc.autoTable({
@@ -530,75 +552,45 @@ async function baixarConversa() {
     });
   }
 
-  // 5) Proposta Sugerida
+  // Proposta
   const prop = gerarPropostaComBaseNoDiagnostico(window.diag);
-  let y2 = (doc.lastAutoTable?.finalY || 120) + 10;
+  let y = (doc.lastAutoTable?.finalY || 120) + 10;
   doc.setFontSize(14);
-  doc.setTextColor(0,0,0);
-  doc.text("Proposta Sugerida", 14, y2);
-
-  y2 += 6;
+  doc.text("Proposta Sugerida", 14, y); y += 6;
   doc.setFontSize(11);
-  doc.text(sanitize(`Título: ${prop.titulo}`), 14, y2);
-  y2 += 6;
-  doc.text(sanitize(`Investimento: ${prop.valor}`), 14, y2);
-  y2 += 6;
-  doc.text("Escopo:", 14, y2);
-  y2 += 6;
+  doc.text(sanitize(`Título: ${prop.titulo}`), 14, y); y += 6;
+  doc.text(sanitize(`Investimento: ${prop.valor}`), 14, y); y += 6;
+  doc.text("Escopo:", 14, y); y += 6;
   doc.setFontSize(10);
   const escopo = prop.corpo.map(i => `• ${i}`).join("\n");
-  doc.text(doc.splitTextToSize(sanitize(escopo), 182), 14, y2);
+  doc.text(doc.splitTextToSize(sanitize(escopo), 182), 14, y);
 
-  // 6) Chamada + botão WhatsApp (100% arredondado, TEXTO EM NEGRITO)
-  const btnYBase = y2 + 22;
-  doc.setFontSize(11);
-  const desc = sanitize("Entre em contato pelo WhatsApp para avançarmos com a regularização.");
-  doc.text(doc.splitTextToSize(desc, 182), 14, btnYBase);
-
-  const btnY = btnYBase + 8;
-  const btnX = 14;
-  const btnW = 95;
-  const btnH = 12;
-  const radius = btnH / 2; // 100% arredondado
-
+  // Botão WhatsApp verde com texto em negrito (visual no PDF)
+  const btnY = y + 22;
+  const btnX = 14, btnW = 95, btnH = 12, radius = btnH/2;
   doc.setFillColor(23, 227, 13);
-  if (doc.roundedRect) {
-    doc.roundedRect(btnX, btnY, btnW, btnH, radius, radius, "F");
-  } else {
-    doc.rect(btnX, btnY, btnW, btnH, "F");
-  }
-
-  // Texto em bold no botão
-  if (loadedRoboto) {
-    // Roboto regular only; usa bold do helvetica para garantir negrito
-    doc.setFont("helvetica", "bold");
-  } else {
-    doc.setFont("helvetica", "bold");
-  }
-  doc.setTextColor(0, 0, 0);
+  if (doc.roundedRect) doc.roundedRect(btnX, btnY, btnW, btnH, radius, radius, "F");
+  else doc.rect(btnX, btnY, btnW, btnH, "F");
+  doc.setTextColor(0,0,0);
   doc.setFontSize(11);
-  doc.text(sanitize("Falar no WhatsApp"), btnX + 8, btnY + 8);
-
-  const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent(
-    "Quero regularizar meu CNPJ"
-  )}`;
+  doc.setFont(undefined, "bold");
+  doc.text("Falar no WhatsApp", btnX + 8, btnY + 8);
+  doc.setFont(undefined, "normal");
+  const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent("Quero regularizar meu CNPJ")}`;
   doc.link(btnX, btnY, btnW, btnH, { url: linkWhats });
 
-  // 7) Rodapé
+  // Rodapé
   let fy = btnY + 22;
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(100);
-  doc.text(sanitize("Instagram: @cnpjlegal"), 14, fy);
-  fy += 5;
+  doc.text(sanitize("Instagram: @cnpjlegal"), 14, fy); fy += 5;
   doc.text(sanitize("Site oficial: www.cnpjlegal.com.br"), 14, fy);
 
-  // 8) Salvar
   const nomeArq = `CNPJ_Legal_${(d.cnpj || ultimoCNPJ || "relatorio").replace(/\D/g,'')}.pdf`;
   doc.save(nomeArq);
 }
 
-// Expondo funções no escopo global (garantia para onclick do HTML)
+// Expõe globais
 window.consultarCNPJ = consultarCNPJ;
 window.enviarWhatsApp = enviarWhatsApp;
 window.baixarConversa = baixarConversa;
