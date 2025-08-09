@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Consulta CNPJ - Diagnóstico Completo</title>
   <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <!-- CSS -->
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/style.css?v=4" />
 </head>
 <body>
 
@@ -16,12 +16,12 @@
     <div class="headline-card">
       <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
       <p>Identificamos todas as pendências associadas ao seu CNPJ:</p>
-      <div class="card-list">
-        <div class="card-item">Situação Cadastral</div>
-        <div class="card-item">Situação do Enquadramento</div>
-        <div class="card-item">Declaração Anual de Faturamento</div>
-        <div class="card-item">Dívida Ativa</div>
-        <div class="card-item">Demais Débitos</div>
+      <div class="card-list" id="pillList">
+        <div class="card-item" data-focus="cnpjInput">Situação Cadastral</div>
+        <div class="card-item" data-focus="cnpjInput">Situação do Enquadramento</div>
+        <div class="card-item" data-focus="cnpjInput">Declaração Anual de Faturamento</div>
+        <div class="card-item" data-focus="cnpjInput">Dívida Ativa</div>
+        <div class="card-item" data-focus="cnpjInput">Demais Débitos</div>
       </div>
     </div>
   </section>
@@ -38,7 +38,7 @@
         inputmode="numeric"
         aria-label="Digite o CNPJ"
       />
-      <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
+      <button id="consultarBtn" class="btn-primary" onclick="consultarCNPJ()">Consultar</button>
     </div>
 
     <!-- Chat -->
@@ -49,24 +49,53 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- JS principal (sem querystring pra evitar 404) -->
-  <script src="/static/script.js" defer></script>
+  <!-- JS principal -->
+  <script src="/static/script.js?v=4" defer></script>
 
-  <!-- Botão fixo: continuar a regularização (mostrado pelo JS com .show) -->
-  <button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()" aria-label="Continuar a regularização">
+  <!-- Botão fixo: iniciar regularização -->
+  <button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()" aria-label="Iniciar regularização">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 12l7 7 11-11"/>
     </svg>
-    Continuar a regularização
+    Iniciar regularização
   </button>
 
-  <!-- Botão fixo: baixar PDF (fica invisível até o JS aplicar .show) -->
+  <!-- Botão fixo: baixar PDF -->
   <button id="btnDownload" class="btn-download" onclick="baixarConversa()" aria-label="Baixar diagnóstico em PDF">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
     </svg>
     Baixar Diagnóstico
   </button>
+
+  <!-- ANCORAGEM DOS CHIPS (adição mínima) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const chips = document.querySelectorAll('#pillList .card-item');
+      const input = document.getElementById('cnpjInput');
+      const chat  = document.getElementById('resultado');
+
+      function hint() {
+        if (!chat || chat.dataset.hintShown) return;
+        chat.dataset.hintShown = '1';
+        // Se o script principal já carregou, usa a bolha animada
+        if (typeof botSayHTML === 'function') {
+          botSayHTML("<b>Digite o CNPJ</b> no campo acima e clique em <b>Consultar</b> para começar o diagnóstico.");
+        }
+      }
+
+      chips.forEach(chip => {
+        chip.style.cursor = 'pointer';
+        chip.addEventListener('click', () => {
+          if (!input) return;
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Foca após a rolagem
+          setTimeout(() => input.focus({ preventScroll: true }), 300);
+          hint();
+        });
+      });
+    });
+  </script>
 
 </body>
 </html>
