@@ -1,59 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Consulta CNPJ - Diagnóstico Completo</title>
-<meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
-<link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-
-<!-- CSS principal -->
-<link rel="stylesheet" href="/static/style.css?v=2" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consulta CNPJ - Diagnóstico Completo</title>
+  <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/static/style.css?v=3" />
 </head>
 <body>
 
-<section class="hero">
-  <div class="headline-card">
-    <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
-    <p>Identificamos todas as pendências associadas ao seu CNPJ:</p>
-    <div class="card-list">
-      <div class="card-item">Situação Cadastral</div>
-      <div class="card-item">Situação do Enquadramento</div>
-      <div class="card-item">Declaração Anual de Faturamento</div>
-      <div class="card-item">Dívida Ativa</div>
-      <div class="card-item">Demais Débitos</div>
+  <section class="hero">
+    <div class="headline-card">
+      <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
+      <p>Identificamos todas as pendências associadas ao seu CNPJ:</p>
+      <div class="card-list">
+        <div class="card-item">Situação Cadastral</div>
+        <div class="card-item">Situação do Enquadramento</div>
+        <div class="card-item">Declaração Anual de Faturamento</div>
+        <div class="card-item">Dívida Ativa</div>
+        <div class="card-item">Demais Débitos</div>
+      </div>
     </div>
+  </section>
+
+  <div class="container">
+    <div class="form-row">
+      <input
+        type="text"
+        id="cnpjInput"
+        placeholder="Digite o CNPJ (somente números)"
+        maxlength="18"
+        autocomplete="off"
+        inputmode="numeric"
+        aria-label="Digite o CNPJ"
+      />
+      <button id="consultarBtn" class="btn-primary" onclick="consultarCNPJ()">Consultar</button>
+    </div>
+
+    <div id="resultado" class="chatbox" aria-live="polite" aria-label="Resultado do diagnóstico"></div>
   </div>
-</section>
 
-<div class="container">
-  <input type="text" id="cnpjInput" placeholder="Digite o CNPJ" maxlength="18">
-  <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
-  <div id="resultado" class="chatbox"></div>
-</div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="/static/script.js?v=3" defer></script>
 
-<!-- libs -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()" aria-label="Iniciar regularização">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 12l7 7 11-11"/>
+    </svg>
+    Iniciar regularização
+  </button>
 
-<!-- JS principal -->
-<script src="/static/script.js?v=2" defer></script>
-
-<!-- Botão fixo para iniciar regularização (verde) -->
-<button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M3 12l7 7 11-11"/>
-  </svg>
-  Iniciar regularização
-</button>
-
-<!-- Botão fixo para baixar o relatório (azul) -->
-<button id="btnDownload" class="btn-download" onclick="baixarConversa()">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
-  </svg>
-  Baixar Diagnóstico
-</button>
+  <button id="btnDownload" class="btn-download" onclick="baixarConversa()" aria-label="Baixar diagnóstico em PDF">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
+    </svg>
+    Baixar Diagnóstico
+  </button>
 
 </body>
 </html>
