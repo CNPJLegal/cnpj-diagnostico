@@ -98,9 +98,10 @@ body {
   border-radius: 100px;
   font-size: 14px;
   font-weight: bold;
+  cursor: pointer;           /* <- clicável para focar o input */
 }
 
-/* Card branco */
+/* Card branco (form + chat) */
 .container {
   max-width: 480px;
   margin: 20px auto 40px;
@@ -196,8 +197,12 @@ input {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* garante espaço para os botões fixos não cobrirem o final do chat */
-  padding-bottom: 120px;
+  padding-bottom: 120px;      /* espaço para não ficar atrás dos botões flutuantes */
+}
+/* Some o espaço quando ainda não há mensagens (evita “borda branca”) */
+.chatbox:empty {
+  display: none;
+  padding-bottom: 0;
 }
 
 /* Linha (container) das mensagens */
@@ -279,15 +284,15 @@ input {
 .opcoes-botoes {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;            /* <- permite quebrar linha no mobile */
+  flex-wrap: wrap;          /* quebra em múltiplas linhas no mobile */
   width: 100%;
 }
 
 .opcoes-botoes button {
-  flex: 1 1 0;                /* <- distribui igualmente */
-  min-width: 32%;             /* <- 3 botões cabem em 2 linhas se precisar */
+  flex: 1 1 0;              /* distribui igualmente */
+  min-width: 32%;           /* 3 botões cabem em duas linhas se precisar */
   margin: 4px 0;
-  padding: 10px 14px;         /* <- alvo de toque maior */
+  padding: 10px 14px;       /* alvo de toque maior */
   border: none;
   border-radius: 16px;
   background: #0f3efa;
@@ -297,7 +302,7 @@ input {
 }
 .opcoes-botoes button:hover { background: #0c2ecc; }
 
-/* Botões verdes dentro do chat */
+/* Botões verdes dentro do chat (ex.: "Ainda não", "Quero prosseguir", "Ir para o WhatsApp") */
 .opcoes-botoes button.verde {
   background: #17e30d;
   color: #000;
