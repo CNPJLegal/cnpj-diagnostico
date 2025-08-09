@@ -7,7 +7,18 @@
   <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <!-- CSS -->
-  <link rel="stylesheet" href="/static/style.css?v=4" />
+  <link rel="stylesheet" href="/static/style.css?v=5" />
+  <style>
+    /* Botão verde fixo */
+    .btn-download {
+      background-color: #17e30d !important;
+      color: #000 !important;
+    }
+    /* Ajuste de margem inferior */
+    body {
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
 
@@ -50,23 +61,50 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
   <!-- JS principal -->
-  <script src="/static/script.js?v=4" defer></script>
+  <script src="/static/script.js?v=5" defer></script>
 
   <!-- Botão fixo: iniciar regularização -->
   <button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()" aria-label="Iniciar regularização">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 12l7 7 11-11"/>
     </svg>
-    Iniciar regularização
+    Continuar a regularização
   </button>
 
   <!-- Botão fixo: baixar PDF -->
-  <button id="btnDownload" class="btn-download" onclick="baixarConversa()" aria-label="Baixar diagnóstico em PDF">
+  <button id="btnDownload" class="btn-download" style="display:none;" onclick="baixarConversa()" aria-label="Baixar diagnóstico em PDF">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
     </svg>
     Baixar Diagnóstico
   </button>
+
+  <!-- Botão: consultar novo CNPJ -->
+  <button id="btnNovoCNPJ" class="btn-primary" style="display:none;" onclick="novoCNPJ()">
+    Consultar novo CNPJ
+  </button>
+
+  <script>
+    // Rolar até o campo de CNPJ ao clicar nas opções azuis
+    document.querySelectorAll('[data-focus="cnpjInput"]').forEach(el => {
+      el.addEventListener('click', () => {
+        document.getElementById('cnpjInput').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('cnpjInput').focus();
+      });
+    });
+
+    // Mostrar botões após WhatsApp
+    function enviarWhatsApp() {
+      window.open('https://api.whatsapp.com/message/H3JQBE7FJI2RP1?autoload=1&app_absent=0', '_blank');
+      document.getElementById('btnDownload').style.display = 'inline-flex';
+      document.getElementById('btnNovoCNPJ').style.display = 'inline-flex';
+    }
+    function novoCNPJ() {
+      document.getElementById('cnpjInput').value = '';
+      document.getElementById('resultado').innerHTML = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
 
 </body>
 </html>
