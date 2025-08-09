@@ -6,24 +6,27 @@
   <title>Consulta CNPJ - Diagnóstico Completo</title>
   <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="/static/style.css?v=3" />
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/style.css?v=4" />
 </head>
 <body>
 
+  <!-- HERO -->
   <section class="hero">
     <div class="headline-card">
       <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
       <p>Identificamos todas as pendências associadas ao seu CNPJ:</p>
-      <div class="card-list">
-        <div class="card-item">Situação Cadastral</div>
-        <div class="card-item">Situação do Enquadramento</div>
-        <div class="card-item">Declaração Anual de Faturamento</div>
-        <div class="card-item">Dívida Ativa</div>
-        <div class="card-item">Demais Débitos</div>
+      <div class="card-list" id="pillList">
+        <div class="card-item" data-focus="cnpjInput">Situação Cadastral</div>
+        <div class="card-item" data-focus="cnpjInput">Situação do Enquadramento</div>
+        <div class="card-item" data-focus="cnpjInput">Declaração Anual de Faturamento</div>
+        <div class="card-item" data-focus="cnpjInput">Dívida Ativa</div>
+        <div class="card-item" data-focus="cnpjInput">Demais Débitos</div>
       </div>
     </div>
   </section>
 
+  <!-- CARD (form + chat) -->
   <div class="container">
     <div class="form-row">
       <input
@@ -38,13 +41,18 @@
       <button id="consultarBtn" class="btn-primary" onclick="consultarCNPJ()">Consultar</button>
     </div>
 
+    <!-- Chat -->
     <div id="resultado" class="chatbox" aria-live="polite" aria-label="Resultado do diagnóstico"></div>
   </div>
 
+  <!-- libs PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="/static/script.js?v=3" defer></script>
 
+  <!-- JS principal -->
+  <script src="/static/script.js?v=4" defer></script>
+
+  <!-- Botão fixo: iniciar regularização -->
   <button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()" aria-label="Iniciar regularização">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 12l7 7 11-11"/>
@@ -52,6 +60,7 @@
     Iniciar regularização
   </button>
 
+  <!-- Botão fixo: baixar PDF -->
   <button id="btnDownload" class="btn-download" onclick="baixarConversa()" aria-label="Baixar diagnóstico em PDF">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
