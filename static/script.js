@@ -1,76 +1,63 @@
 // =========================
 // CONFIG
 // =========================
-const USE_PGFN = false; // deixe false enquanto não contratar a API da PGFN
+const USE_PGFN = false; // manter false enquanto não contratar a API da PGFN
 
 // =========================
-//// AVATARES
+// AVATARES
 // =========================
-const avatarBot  = "https://i.ibb.co/b5h1V8nd/i-cone.png";            // CNPJ Legal
-const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";  // Usuário
+const avatarBot  = "https://i.ibb.co/b5h1V8nd/i-cone.png";
+const avatarUser = "https://i.ibb.co/8D2DQtrZ/icon-7797704-640.png";
 
 // Estado global simples
 let ultimoCNPJ = "";
 window.dadosCNPJ = {};
+window.userAnswers = { dasnResposta: "nao_sei" };
 
-// Estrutura consolidada das 5 telas do diagnóstico
+// Estrutura das 5 telas do diagnóstico
 window.diag = {
   tela1: null,                                   // Situação Cadastral (RFB/CNPJ)
-  tela2: { status: USE_PGFN ? "PENDENTE" : "NAO_CONSULTADO", detalhes: null }, // PGFN/CPF (padrão texto)
-  tela3: null,                                   // DASN-SIMEI (declaração anual)
-  tela4: { ignorada: true },                     // PGMEI (débitos DAS) — ignorada no chat
-  tela5: null                                    // SIMEI/Simples/Lucro Presumido
+  tela2: { status: USE_PGFN ? "PENDENTE" : "NAO_CONSULTADO", detalhes: null }, // PGFN/CPF
+  tela3: null,                                   // DASN-SIMEI (pergunta ao usuário)
+  tela4: null,                                   // PGMEI (ignoraremos — sem API)
+  tela5: null                                    // SIMEI/Simples (enquadramento)
 };
 
 // =========================
 // UTIL
 // =========================
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const $ = (sel) => document.querySelector(sel);
 
 function limparMascara(cnpj) {
   return (cnpj || "").replace(/\D/g, "");
 }
-
 function safeText(v) {
   return String(v ?? "").replace(/<[^>]*>?/gm, "").trim();
 }
 
-// Adiciona bolha (texto puro)
-function addMensagem(texto, autor = 'bot') {
-  const clean = safeText(texto);
+// Adiciona bolha (html permitido p/ negritos)
+function addHTML(textoHTML, autor = 'bot') {
+  const clean = String(textoHTML ?? "").trim();
   if (!clean) return;
-
-  const chat = document.getElementById('resultado');
-  const div = document.createElement('div');
-  div.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
+  const chat = $('#resultado');
+  const row = document.createElement('div');
+  row.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
   const avatar = autor === 'bot' ? avatarBot : avatarUser;
-
-  div.innerHTML = `
+  row.innerHTML = `
     <img src="${avatar}" class="avatar" alt="${autor}">
     <span>${clean}</span>
   `;
-  chat.appendChild(div);
+  chat.appendChild(row);
   chat.scrollTop = chat.scrollHeight;
 }
 
-// Adiciona bolha permitindo HTML controlado
-function addMensagemHTML(html, autor = 'bot') {
-  const chat = document.getElementById('resultado');
-  const div = document.createElement('div');
-  div.className = autor === 'bot' ? 'msg-bot' : 'msg-user';
-  const avatar = autor === 'bot' ? avatarBot : avatarUser;
+// Atalhos compatíveis
+function addMensagem(texto, autor='bot'){ addHTML(safeText(texto), autor); }
 
-  div.innerHTML = `
-    <img src="${avatar}" class="avatar" alt="${autor}">
-    <span>${html}</span>
-  `;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-// --- Animação de digitação do bot ("...") ---
+// Animação de digitação
 function startTyping() {
-  const chat = document.getElementById('resultado');
+  const chat = $('#resultado');
   const wrap = document.createElement('div');
   wrap.className = 'msg-bot';
   wrap.innerHTML = `
@@ -94,25 +81,38 @@ function stopTyping(t) {
   clearInterval(t.itv);
   t.node.remove();
 }
-// bot "digita" e envia texto puro
-async function botSay(texto, delay = 500) {
+async function botSayHTML(html, delay=450){
   const t = startTyping();
   await sleep(delay);
   stopTyping(t);
-  addMensagem(texto, 'bot');
+  addHTML(html, 'bot');
 }
-// bot "digita" e envia HTML
-async function botSayHTML(html, delay = 500) {
-  const t = startTyping();
-  await sleep(delay);
-  stopTyping(t);
-  addMensagemHTML(html, 'bot');
+async function botSay(txt, delay=450){ await botSayHTML(safeText(txt), delay); }
+
+// =========================
+// HERO: chips → focar input + balão animado
+// =========================
+function prepararHeroChips(){
+  document.querySelectorAll('.card-item').forEach(chip=>{
+    chip.style.cursor = 'pointer';
+    chip.onclick = ()=> {
+      const input = $('#cnpjInput');
+      input.scrollIntoView({behavior:'smooth', block:'center'});
+      input.focus();
+      // Balão animado pedindo CNPJ (se ainda não existe nenhum no chat)
+      const chat = $('#resultado');
+      if (!chat.dataset.hintShown){
+        chat.dataset.hintShown = '1';
+        botSayHTML("<b>Digite o CNPJ</b> no campo acima e clique em <b>Consultar</b> para começar o diagnóstico.");
+      }
+    };
+  });
 }
 
 // =========================
-//// MÁSCARA CNPJ
+// MÁSCARA CNPJ
 // =========================
-document.getElementById('cnpjInput')?.addEventListener('input', function (e) {
+$('#cnpjInput')?.addEventListener('input', function (e) {
   let v = e.target.value.replace(/\D/g, '').slice(0, 14);
   if (v.length > 2)  v = v.replace(/(\d{2})(\d)/, '$1.$2');
   if (v.length > 6)  v = v.replace(/(\d{3})(\d)/, '$1.$2');
@@ -125,28 +125,22 @@ document.getElementById('cnpjInput')?.addEventListener('input', function (e) {
 // CONSULTA
 // =========================
 async function consultarCNPJ() {
-  const input = document.getElementById('cnpjInput');
-  const botao = document.getElementById('consultarBtn');
-  const chat  = document.getElementById('resultado');
+  const input = $('#cnpjInput');
+  const botao = $('#consultarBtn');
+  const chat  = $('#resultado');
 
   const cnpj = limparMascara(input.value);
-
-  // limpa chat
-  chat.innerHTML = '';
+  chat.innerHTML = ''; // limpa
 
   if (!cnpj || cnpj.length !== 14) {
-    await botSay("Digite um CNPJ válido com 14 números.", 300);
+    await botSay("Digite um CNPJ válido com 14 números.");
     return;
   }
 
-  // mostra mensagem do usuário com avatar
   addMensagem(input.value, 'user');
-
-  // esconde input/botão
   input.style.display = 'none';
   botao.style.display = 'none';
 
-  // spinner
   const spinner = document.createElement('div');
   spinner.className = 'spinner';
   spinner.id = 'loadingSpinner';
@@ -159,11 +153,10 @@ async function consultarCNPJ() {
       body: JSON.stringify({ cnpj })
     });
     const data = await res.json();
-    document.getElementById('loadingSpinner')?.remove();
+    $('#loadingSpinner')?.remove();
 
     if (data.erro) {
-      await botSay(data.erro, 300);
-      // reexibe para nova tentativa
+      await botSay(data.erro);
       input.style.display = '';
       botao.style.display = '';
       return;
@@ -175,527 +168,379 @@ async function consultarCNPJ() {
     // NORMALIZAÇÕES/DEFAULTS
     const status = safeText(data.status || data.situacao || "");
     const simplesOptante = !!(data.simples_optante ?? data.simei?.optante ?? data.company?.simei?.optant);
-    const dasnPendente   = null; // vamos perguntar ao usuário
-    const dasAbertas     = null; // Etapa 4 ignorada
+    const dasnPendente   = null; // perguntaremos ao usuário
+    const dasAbertas     = null; // sem API confiável
 
-    // Tentar identificar regime fora do SIMEI (se vier do backend)
-    const regimeRaw = (data.regime || data.simples_regime || data.company?.regime || "").toLowerCase();
-    let regimeAtual = "";
-    if (regimeRaw.includes("lucro presumido")) regimeAtual = "LP";
-    else if (!simplesOptante && regimeRaw.includes("simples")) regimeAtual = "SN";
-
-    // Grava no diag
     window.diag.tela1 = { status: status || "—" };
-    window.diag.tela3 = { dasn_pendente: dasnPendente, resposta_usuario: null };
-    window.diag.tela4 = { ignorada: true };
-    window.diag.tela5 = { simei_optante: simplesOptante, regime: regimeAtual };
+    window.diag.tela3 = { dasn_pendente: dasnPendente };
+    window.diag.tela4 = { das_em_aberto: dasAbertas };
+    window.diag.tela5 = { simei_optante: simplesOptante };
 
-    // mostra botões fixos (canto inferior direito)
-    document.getElementById('btnDownload')?.classList.add('show');
-    const btnReg = document.getElementById('btnRegularizar');
-    if (btnReg) {
-      btnReg.classList.add('show');
-      btnReg.onclick = enviarWhatsApp; // garante ação correta
-    }
+    // mostrar botões fixos
+    $('#btnDownload')?.classList.add('show');
+    $('#btnRegularizar')?.classList.add('show');
 
     await iniciarConversa(data);
 
   } catch (err) {
-    document.getElementById('loadingSpinner')?.remove();
-    await botSay("Erro ao consultar dados. Tente novamente mais tarde.", 300);
-    // reexibe entrada
+    $('#loadingSpinner')?.remove();
+    await botSay("Erro ao consultar dados. Tente novamente mais tarde.");
     input.style.display = '';
     botao.style.display = '';
   }
 }
 
 // =========================
-// FLUXO DE MENSAGENS
+// FLUXO
 // =========================
-function textoTela1(status) {
+function statusMensagem(status) {
   const s = (status || "").toLowerCase();
-  if (s.includes('ativo')) {
-    return "<strong>/TEXTO1 CNPJ ATIVO</strong><br>Confirmamos que seu CNPJ está <strong>ativo</strong> na Receita Federal. No entanto, identificamos a existência de guias de pagamento mensais <strong>pendentes</strong>.";
-  }
-  if (s.includes('baixado')) {
-    return "<strong>/TEXTO1 CNPJ BAIXADO</strong><br>Seu CNPJ está <strong>baixado (encerrado)</strong> na Receita Federal. Mesmo com o CNPJ baixado, ainda existem <strong>valores em aberto</strong> que precisam ser regularizados.";
-  }
-  if (s.includes('inapto')) {
-    return "<strong>/TEXTO1 CNPJ INAPTO</strong><br>Seu CNPJ está <strong>inapto</strong> perante a Receita Federal devido a <strong>pendências existentes</strong>.";
-  }
-  return "Situação cadastral: não identificada.";
-}
-
-function textoTela2Padrao() {
-  return `
-  <strong>/TEXTO2 DIVIDA ATIVA</strong><br>
-  Devido ao não pagamento das taxas mensais do seu CNPJ, a dívida foi <strong>transferida para o seu CPF</strong>, tornando-se uma <strong>dívida ativa com a Receita Federal</strong>.<br><br>
-  A dívida ativa pode acarretar sérias consequências como:
-  <ul style="margin:6px 0 0 18px;">
-    <li>Bloqueio de contas bancárias</li>
-    <li>Bloqueio de maquininhas de cartão</li>
-    <li>Impedimento de emissão de notas fiscais</li>
-    <li>Penhora de bens</li>
-    <li>Inclusão em cadastros de inadimplentes (SPC/SERASA)</li>
-    <li>Envio da dívida para cartório, gerando custos adicionais</li>
-  </ul>
-  <br>
-  <strong>Temos uma solução:</strong> É possível <strong>conseguir até 50% de desconto</strong> e <strong>parcelar o saldo restante em até 60 vezes</strong>, facilitando a regularização e evitando que essas consequências ocorram.
-  `;
-}
-
-function textoTela3Pendente(status) {
-  const s = (status || "").toLowerCase();
-  if (s.includes('baixado')) {
-    return "<strong>/TEXTO3DECLARACAOESPECIAL</strong><br>Adicionalmente, a <strong>declaração anual especial</strong> de faturamento, necessária devido ao encerramento do CNPJ, <strong>não foi apresentada</strong>. O prazo para essa entrega já se esgotou; existe a possibilidade de multa de <strong>R$ 50,00</strong>.";
-  }
-  return "<strong>/TEXTO3 DECLARACAO ANUAL</strong><br>Também identifiquei que a <strong>Declaração Anual de Faturamento</strong> do seu CNPJ está <strong>pendente</strong>. A não entrega pode resultar em uma <strong>multa de ~R$ 25,00</strong>.";
-}
-
-function textoTela5(diag) {
-  const status = (diag.tela1?.status || "").toLowerCase();
-  const ativo   = status.includes("ativo");
-  const inapto  = status.includes("inapto");
-  const simei   = !!diag.tela5?.simei_optante;
-  const regime  = diag.tela5?.regime || ""; // "SN" | "LP" | ""
-
-  if (simei && (ativo || inapto)) {
-    return "<strong>/TEXTO5 ENQUADRADO MEI</strong><br>A notícia positiva é que seu CNPJ <strong>não foi desenquadrado do MEI</strong>. Portanto, precisamos apenas regularizar as pendências para que o CNPJ retorne à situação regular.<br><br>É importante lembrar que, se as pendências não forem resolvidas, o CNPJ pode ser desenquadrado do MEI e migrar para regimes com impostos mais altos e mais burocracia.";
-  }
-
-  if (!simei && regime === "SN" && ativo) {
-    return "<strong>/TEXTO5 DESENQ SIMPLES ATIVO</strong><br>Identificamos que seu CNPJ foi <strong>desenquadrado do MEI (SIMEI)</strong> e agora está no <strong>Simples Nacional</strong>. Implicações:<ul style='margin:6px 0 0 18px;'><li>Impostos calculados sobre o faturamento (mínimo <strong>6%</strong> para serviços).</li><li>Declarações mensais e anuais do Simples são obrigatórias; a falta gera <strong>multas</strong>.</li></ul>";
-  }
-
-  if (!simei && regime === "SN" && inapto) {
-    return "<strong>/TEXTO5 DESENQ SIMPLES INAPTO</strong><br>Seu CNPJ está <strong>inapto</strong> e foi <strong>desenquadrado do MEI</strong>, passando para o <strong>Simples Nacional</strong>. Implicações:<ul style='margin:6px 0 0 18px;'><li>Impostos calculados sobre o faturamento (mínimo <strong>6%</strong> para serviços).</li><li>Para regularizar e permitir a baixa, será necessário entregar as declarações do Simples do período em que esteve desenquadrado (mesmo sem movimento).</li><li>A não entrega gera <strong>multas</strong>.</li></ul><strong>É crucial regularizar essa situação.</strong>";
-  }
-
-  if (!simei && regime === "LP" && ativo) {
-    return "<strong>/TEXTO5 DESENQ LP ATIVO</strong><br><strong>Alerta importante!</strong> Seu CNPJ foi desenquadrado do MEI e do Simples Nacional, estando no regime de <strong>Lucro Presumido</strong>.<br><br>Este regime é mais complexo, exige contador mensal e possui impostos mais altos (mínimo <strong>13,33%</strong> para serviços), além de multas por declarações não entregues.";
-  }
-
-  if (!simei && regime === "LP" && inapto) {
-    return "<strong>/TEXTO5 DESENQ LP INAPTO</strong><br><strong>Alerta importante!</strong> Seu CNPJ está <strong>inapto</strong> e foi desenquadrado do MEI e do Simples, estando agora no <strong>Lucro Presumido</strong>.<br><br>Para regularizar e conseguir a baixa, será necessário entregar declarações do Lucro Presumido (mesmo sem movimento). Este regime tem impostos mais altos (mínimo <strong>13,33%</strong> para serviços) e a falta de declarações pode gerar multas.";
-  }
-
-  // fallback quando só sabemos que não é MEI, mas não sabemos SN vs LP
-  if (!simei) {
-    const rotulo = ativo ? "DESENQ SIMPLES ATIVO" : (inapto ? "DESENQ SIMPLES INAPTO" : "DESENQ");
-    return `<strong>/TEXTO5 ${rotulo}</strong><br>Identificamos que seu CNPJ foi <strong>desenquadrado do MEI</strong>. No regime atual, há <strong>obrigações acessórias</strong> e tributos sobre o faturamento. Nosso time cuidará das declarações necessárias e das pendências para regularizar sua situação.`;
-  }
-
-  return "Situação de enquadramento não identificada.";
-}
-
-// Mostra botões de opção e retorna uma Promise com a escolha
-function perguntarComBotoes(opcoes = []) {
-  return new Promise(resolve => {
-    const chat = document.getElementById('resultado');
-    const div  = document.createElement('div');
-    div.className = 'opcoes-botoes';
-
-    opcoes.forEach(op => {
-      const btn = document.createElement('button');
-      btn.textContent = op.label;
-      if (op.verde) btn.classList.add('verde');
-      btn.onclick = () => {
-        // Mostra a escolha do usuário no chat
-        addMensagem(op.label, 'user');
-        div.remove();
-        resolve(op.value);
-      };
-      div.appendChild(btn);
-    });
-
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  });
+  if (s.includes('ativo'))  return "<b>Situação cadastral:</b> ativo.";
+  if (s.includes('baixado'))return "<b>Situação cadastral:</b> baixado.";
+  if (s.includes('inapto')) return "<b>Situação cadastral:</b> inapto.";
+  return "<b>Situação cadastral:</b> não identificada.";
 }
 
 async function iniciarConversa(data) {
-  // Saudação com nome
-  const nome = safeText(
-    data.nome_empresario || data.nome_titular || data.responsavel ||
-    data.razao_social || data.company?.owner || data.company?.name || ""
-  );
-  if (nome) await botSayHTML(`Olá, <strong>${nome}</strong>.`);
-  else      await botSay("Olá.");
+  if (safeText(data.responsavel)) await botSayHTML(`Olá, <b>${safeText(data.responsavel)}</b>.`);
+  else                            await botSay("Olá.");
 
-  // ETAPA 1 — Situação Cadastral
-  if (window.diag.tela1?.status) {
-    await botSayHTML(textoTela1(window.diag.tela1.status));
-  }
+  if (window.diag.tela1?.status) await botSayHTML(statusMensagem(window.diag.tela1.status));
 
-  // ETAPA 2 — Dívida Ativa (mensagem padrão)
-  await botSayHTML(textoTela2Padrao());
-
-  // ETAPA 3 — Perguntar sobre DASN do ano passado
-  await botSayHTML(`Sobre a <strong>Declaração Anual de Faturamento (DASN-SIMEI)</strong> do ano passado, você já entregou?`);
-  const resp = await perguntarComBotoes([
-    { label: "Ainda não",  value: "nao" },
-    { label: "Já declarei", value: "sim" },
-    { label: "Não sei",    value: "ns" }
-  ]);
-
-  // Registrar resposta e mensagens
-  window.diag.tela3.resposta_usuario = resp;
-
-  if (resp === "nao") {
-    window.diag.tela3.dasn_pendente = true;
-    await botSayHTML(textoTela3Pendente(window.diag.tela1?.status));
-  } else if (resp === "sim") {
-    window.diag.tela3.dasn_pendente = false;
-    await botSayHTML("Perfeito! Vamos considerar como <strong>em dia</strong>. De qualquer forma, um especialista do CNPJ Legal irá <strong>verificar nos sistemas oficiais</strong> durante o processo de regularização.");
-  } else {
-    window.diag.tela3.dasn_pendente = null; // desconhecido
-    await botSay("Sem problemas! Vamos seguir e nossa equipe validará isso ao dar andamento.");
-  }
-
-  // ETAPA 4 — Ignorada (apenas anotada)
-  // (nada no chat)
-
-  // ETAPA 5 — Enquadramento
-  await botSayHTML(textoTela5(window.diag));
-
-  // PROPOSTA + confirmação de pagamento
-  const proposta = gerarPropostaComBaseNoDiagnostico(window.diag);
-  await botSayHTML(`<strong>Proposta sugerida:</strong> ${proposta.titulo} — <strong>${proposta.valor}</strong>`);
-
+  // Etapa 2 — Dívida ativa (texto padrão, sem /TEXTO…)
   await botSayHTML(
-    `Para prosseguir, você deverá <strong>efetuar o pagamento</strong> assim que o processo for <strong>concluído</strong> e a situação estiver <strong>100% regularizada</strong>. Todo esse processo é <strong>concluído hoje mesmo</strong>. Se estiver ciente e quiser continuar, clique em <strong>"Quero prosseguir"</strong>.`
+    `<b>Dívida ativa</b><br>
+    Devido ao não pagamento das taxas mensais do seu CNPJ, a dívida foi <b>transferida para o seu CPF</b>, tornando-se uma <b>dívida ativa com a Receita Federal</b>.<br><br>
+    A dívida ativa pode acarretar sérias consequências como:
+    <ul style="margin:8px 0 0 18px">
+      <li>Bloqueio de contas bancárias</li>
+      <li>Bloqueio de maquininhas de cartão</li>
+      <li>Impedimento de emissão de notas fiscais</li>
+      <li>Penhora de bens</li>
+      <li>Inclusão em cadastros de inadimplentes (SPC/SERASA)</li>
+      <li>Envio da dívida para cartório, gerando custos adicionais</li>
+    </ul>
+    <br><b>Temos uma solução:</b> É possível conseguir <b>até 50% de desconto</b> e <b>parcelar</b> o saldo restante <b>em até 60 vezes</b>, facilitando a regularização e evitando que essas consequências ocorram.`
   );
 
-  // Botões finais
-  await mostrarBotoesFinais();
+  // Etapa 5 — Enquadramento
+  if (window.diag.tela5) {
+    if (window.diag.tela5.simei_optante) {
+      await botSayHTML(
+        `<b>Enquadramento:</b> MEI (SIMEI).<br><br>
+        A notícia positiva é que seu CNPJ <b>não foi desenquadrado do MEI</b>. Portanto, precisamos apenas regularizar as pendências para que o CNPJ retorne à situação regular.<br><br>
+        É importante lembrar que, se as pendências não forem resolvidas, o CNPJ pode ser desenquadrado do MEI e migrar para regimes com impostos mais altos e mais burocracia.`
+      );
+    } else {
+      // desenquadrado
+      const status = (window.diag.tela1?.status || "").toLowerCase();
+      const msgBase =
+        `<b>Identificamos</b> que seu CNPJ foi <b>desenquadrado do MEI (SIMEI)</b> e agora está no <b>Simples Nacional</b>.<br>
+        Implicações:
+        <ul style="margin:8px 0 0 18px">
+          <li>Impostos calculados sobre o faturamento (mínimo <b>6%</b> para serviços).</li>
+          <li>Declarações mensais e anuais do Simples são obrigatórias; a falta gera <b>multas</b>.</li>
+        </ul>`;
+      if (status.includes('inapto')) {
+        await botSayHTML(
+          `<b>Enquadramento:</b> desenquadrado do MEI (Simples Nacional) e o CNPJ está <b>inapto</b>.<br><br>${msgBase}`
+        );
+      } else {
+        await botSayHTML(
+          `<b>Enquadramento:</b> desenquadrado do MEI (Simples Nacional).<br><br>${msgBase}`
+        );
+      }
+    }
+  }
+
+  // Etapa 3 — Pergunta DASN
+  await perguntarDASN();
 }
 
-async function mostrarBotoesFinais() {
-  const escolha = await perguntarComBotoes([
-    { label: "Quero prosseguir", value: "ok", verde: true },
-    { label: "Consultar outro CNPJ", value: "novo" }
-  ]);
+async function perguntarDASN(){
+  await botSayHTML(`Sobre a <b>Declaração Anual de Faturamento (DASN-SIMEI)</b> do ano passado, você já entregou?`);
+  mostrarOpcoes(
+    [
+      {label:"Ainda não", value:"ainda_nao", classe:"verde"},
+      {label:"Já declarei", value:"ja_declarei"},
+      {label:"Não sei", value:"nao_sei"}
+    ],
+    async (val, label)=>{
+      addMensagem(label, 'user');
+      window.userAnswers.dasnResposta = val;
+      if (val === "ainda_nao"){
+        window.diag.tela3 = { dasn_pendente: true };
+        const status = (window.diag.tela1?.status || "").toLowerCase();
+        if (status.includes('baixado')){
+          await botSayHTML(
+            `<b>Declaração Anual:</b> <b>pendente</b> (declaração especial de encerramento). A não entrega pode gerar <b>multa de ~R$ 50,00</b>.`
+          );
+        } else {
+          await botSayHTML(
+            `<b>Declaração Anual:</b> <b>pendente</b>. A não entrega pode resultar em <b>multa de ~R$ 25,00</b>.`
+          );
+        }
+      } else if (val === "ja_declarei"){
+        window.diag.tela3 = { dasn_pendente: false };
+        await botSayHTML(`<b>Declaração Anual:</b> em dia (será validado por um especialista durante a regularização).`);
+      } else {
+        window.diag.tela3 = { dasn_pendente: null };
+        await botSayHTML(`Vamos prosseguir; essa informação será conferida por um especialista e registrada no PDF.`);
+      }
 
-  if (escolha === "novo") {
-    location.reload();
-    return;
-  }
+      // Mostrar proposta (TEXTO COMPLETO)
+      const proposta = montarPropostaCompleta(window.diag);
+      await botSayHTML(proposta.previewMsg); // “título + valor” do bloco de proposta
 
-  // Escolheu prosseguir → documentos (de acordo com a proposta)
-  const prop = gerarPropostaComBaseNoDiagnostico(window.diag);
-  if (["MEI","BAIXADO","ATIVO_DESENQ","PADRAO"].includes(prop.tipo)) {
-    // /DOCUMENTO REGULARIZACAO SIMPLES
-    await botSayHTML(
-      `<strong>/DOCUMENTO REGULARIZACAO SIMPLES</strong><br>
-      Ótimo! Para darmos o primeiro passo, precisaremos de algumas informações para acessar os sistemas da Receita Federal:
-      <ul style="margin:6px 0 0 18px;">
-        <li>Nome completo da mãe;</li>
-        <li>Nome completo do pai;</li>
-        <li>Data de nascimento;</li>
-        <li>Número do CPF.</li>
-      </ul>
-      Você pode nos enviar os dados digitados ou uma foto do RG/CNH (frente e verso, se necessário).<br><br>
-      Após recebermos seus dados, nossa equipe analisará e enviará as instruções para o pagamento do investimento inicial de <strong>R$ 399</strong> (realizado após a negociação da dívida).`
-    );
-  } else {
-    // Processos completos (baixa etc.)
-    await botSayHTML(
-      `<strong>/DOCUMENTOS PROCESSOS COMPLETOS</strong><br>
-      Excelente decisão! Para iniciarmos o processo completo, precisaremos:
-      <ul style="margin:6px 0 0 18px;">
-        <li>Número do CPF;</li>
-        <li>Data de nascimento;</li>
-        <li>Nome completo da mãe;</li>
-        <li>Nome completo do pai.</li>
-      </ul>
-      Uma foto do RG/CNH (frente e verso) geralmente contém tudo que precisamos.<br><br>
-      Após o envio dos dados, nossa equipe confirmará os detalhes e enviará as instruções para o pagamento da primeira parte do investimento, no valor de <strong>R$ 399</strong> (após a negociação da Dívida Ativa). A segunda parcela será solicitada na conclusão do processo (prazo médio de 15 dias úteis).`
-    );
-  }
+      // Aviso pagamento hoje + CTA “Quero prosseguir / Consultar outro CNPJ”
+      await botSayHTML(
+        `Para prosseguir, você deverá <b>efetuar o pagamento</b> assim que o processo for <b>concluído</b> e a situação estiver <b>100% regularizada</b> — isso é concluído <b>hoje mesmo</b>. Se estiver ciente e quiser continuar, clique em <b>“Quero prosseguir”</b>.`
+      );
 
-  // Botão para abrir o WhatsApp (só após confirmar)
-  const chat = document.getElementById('resultado');
+      mostrarOpcoes(
+        [
+          {label:"Quero prosseguir", value:"ok", classe:"verde"},
+          {label:"Consultar outro CNPJ", value:"novo"}
+        ],
+        async (v,l)=>{
+          addMensagem(l,'user');
+          if (v==="ok"){
+            // Envia o texto de documentos correspondente à proposta
+            const docMsg = proposta.docMensagemHTML;
+            await botSayHTML(docMsg);
+
+            // Pergunta: possui o valor hoje?
+            await botSayHTML(`Você possui o investimento <b>hoje</b> para pagamento após a conclusão?`);
+            mostrarOpcoes(
+              [
+                {label:"Sim", value:"sim", classe:"verde"},
+                {label:"Ainda não", value:"nao"}
+              ],
+              async (v2, l2)=>{
+                addMensagem(l2,'user');
+                if (v2 === "sim"){
+                  // Botão verde para abrir WhatsApp
+                  mostrarOpcoes(
+                    [{label:"Ir para o WhatsApp", value:"zap", classe:"verde"}],
+                    ()=>{
+                      enviarWhatsAppComContexto(proposta);
+                    }
+                  );
+                } else {
+                  // Mostrar “Baixar diagnóstico” + “Consultar novo CNPJ”
+                  mostrarOpcoes(
+                    [
+                      {label:"Baixar Diagnóstico (PDF)", value:"pdf", classe:""},
+                      {label:"Consultar novo CNPJ", value:"novo"}
+                    ],
+                    (v3)=>{
+                      if (v3==="pdf") baixarConversa();
+                      if (v3==="novo") location.reload();
+                    }
+                  );
+                }
+              }
+            );
+          } else {
+            location.reload();
+          }
+        }
+      );
+    }
+  );
+}
+
+function mostrarOpcoes(opcoes, onClick){
+  const chat = $('#resultado');
   const div  = document.createElement('div');
   div.className = 'opcoes-botoes';
-  const btn = document.createElement('button');
-  btn.textContent = "Ir para o WhatsApp";
-  btn.classList.add('verde');
-  btn.onclick = enviarWhatsApp;
-  div.appendChild(btn);
+
+  opcoes.forEach(o=>{
+    const btn = document.createElement('button');
+    btn.textContent = o.label;
+    if (o.classe === 'verde') btn.classList.add('verde');
+    btn.onclick = ()=>{ div.remove(); onClick(o.value, o.label); };
+    div.appendChild(btn);
+  });
+
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
 
 // =========================
-// PROPOSTA AUTOMÁTICA (R$ 399)
+// PROPOSTAS (texto COMPLETO)
 // =========================
-function gerarPropostaComBaseNoDiagnostico(diag) {
-  const VAL_UNIT = 399;
-  const PARC_DUPLA = `2× de R$ ${VAL_UNIT}, total R$ ${VAL_UNIT*2}`;
+function montarPropostaCompleta(diag){
+  const VAL = 399;
+  const VAL2 = `2× de R$ ${VAL}`;
 
   const status = (diag.tela1?.status || "").toLowerCase();
-  const ativo   = status.includes("ativo");
-  const inapto  = status.includes("inapto");
-  const baixado = status.includes("baixado");
+  const ativo   = status.includes('ativo');
+  const inapto  = status.includes('inapto');
+  const baixado = status.includes('baixado');
+  const simei   = !!diag.tela5?.simei_optante;
 
-  const simei     = !!diag.tela5?.simei_optante;
-  const regime    = diag.tela5?.regime || ""; // "SN" | "LP" | ""
-  // const dasnPend  = diag.tela3?.dasn_pendente; // se precisar
-
-  // 1) MEI ativo/inapto (continua MEI)
-  if ((ativo || inapto) && simei) {
+  // helpers de blocos HTML
+  const wrap = (titulo, corpoArr, valor) => {
+    const lista = corpoArr.map(li=>`<li>${li}</li>`).join("");
     return {
-      keyword: "/PROPOSTA REGULARIZAR MEI",
-      titulo:  "Regularização MEI",
-      valor:   `R$ ${VAL_UNIT}`,
-      corpo: [
-        "Parcelamento da Dívida Ativa (CPF), buscando redução e parcelamento prolongado.",
-        "Parcelamento de DAS em aberto.",
-        "Entrega das DASN-SIMEI pendentes."
-      ],
-      tipo: "MEI"
+      previewMsg: `<b>Proposta:</b> ${titulo} — <b>${valor}</b>`,
+      docMensagemHTML:
+        `<b>Documentos necessários</b><br>` + // substituído depois conforme cada caso
+        ``
     };
+  };
+
+  if ((ativo || inapto) && simei){
+    const titulo = "Regularização MEI";
+    const valor  = `R$ ${VAL}`;
+    const corpo = [
+      "Parcelamento da Dívida Ativa no CPF (buscando redução e parcelamento prolongado).",
+      "Parcelamento das guias mensais (DAS) em aberto no CNPJ.",
+      "Entrega das declarações anuais de faturamento (DASN-SIMEI) pendentes."
+    ];
+    const previewMsg = `<b>/PROPOSTA REGULARIZAR MEI</b><br><b>Boa notícia!</b> Seu CNPJ ainda está enquadrado como MEI. Para regularizar sua situação, nosso serviço inclui:<br><ul style="margin:8px 0 0 18px">${corpo.map(i=>`<li>${i}</li>`).join("")}</ul><br><b>Investimento:</b> <b>${valor}</b>. Pagamento à vista (PIX/débito) ou em até 10x no cartão.`;
+    const docMsg = `<b>Ótimo!</b> Para darmos o primeiro passo, precisaremos:<ul style="margin:8px 0 0 18px"><li>Nome completo da mãe</li><li>Nome completo do pai</li><li>Data de nascimento</li><li>Número do CPF</li></ul>Você pode enviar digitado ou foto do RG/CNH (frente/verso). Após recebermos seus dados, nossa equipe confirmará os próximos passos e enviará as instruções para o pagamento do investimento inicial de <b>R$ ${VAL}</b> (realizado após a negociação da dívida).`;
+    return { previewMsg, docMensagemHTML: docMsg, tipo:"MEI" };
   }
 
-  // 2) Já baixado (foco dívida CPF)
-  if (baixado) {
-    return {
-      keyword: "/PROPOSTA CNPJ JA BAIXADO",
-      titulo:  "Negociação de dívida vinculada ao CPF (CNPJ baixado)",
-      valor:   `R$ ${VAL_UNIT}`,
-      corpo: [
-        "Negociação e parcelamento prolongado da dívida vinculada ao CPF.",
-        "Prevenção de protesto e outros agravamentos."
-      ],
-      tipo: "BAIXADO"
-    };
+  if (baixado){
+    const valor = `R$ ${VAL}`;
+    const previewMsg =
+      `<b>/PROPOSTA CNPJ JÁ BAIXADO</b><br>`+
+      `Verificamos que seu CNPJ já está baixado. As guias mensais (DAS) não pagas geraram uma <b>dívida vinculada ao seu CPF</b>. Podemos ajudar a <b>negociar</b> e <b>parcelar</b> com boas condições.<br><br><b>Investimento:</b> <b>${valor}</b>.`;
+    const docMsg = `<b>Ótimo!</b> Para iniciar a negociação/parcelamento no CPF, precisamos:<ul style="margin:8px 0 0 18px"><li>Nome da mãe</li><li>Nome do pai</li><li>Data de nascimento</li><li>CPF</li></ul>Envie digitado ou foto do RG/CNH. Após análise, enviaremos as instruções de pagamento de <b>R$ ${VAL}</b>.`;
+    return { previewMsg, docMensagemHTML: docMsg, tipo:"BAIXADO" };
   }
 
-  // 3) Ativo desenquadrado do MEI (1ª fase de regularização MEI)
-  if (ativo && !simei) {
-    return {
-      keyword: "/PROPOSTA REGUL ATIVO DESENQ",
-      titulo:  "1ª fase — Regularização do período MEI",
-      valor:   `R$ ${VAL_UNIT}`,
-      corpo: [
-        "Análise fiscal completa.",
-        "Regularização de DAS (período MEI).",
-        "Entrega de DASN-SIMEI em atraso.",
-        "Orientações sobre o regime atual (SN/LP)."
-      ],
-      tipo: "ATIVO_DESENQ"
-    };
+  if (ativo && !simei){
+    const valor = `R$ ${VAL}`;
+    const previewMsg =
+      `<b>/PROPOSTA REGUL ATIVO DESENQ</b><br>`+
+      `Seu CNPJ está ativo, mas foi desenquadrado do MEI. Primeira fase para organizar a situação (período MEI):<ul style="margin:8px 0 0 18px"><li>Análise fiscal completa</li><li>Regularização de DAS em aberto do período MEI</li><li>Entrega de DASN-SIMEI em atraso</li><li>Orientação sobre o regime atual (SN/LP)</li></ul><b>Investimento:</b> <b>${valor}</b>.`;
+    const docMsg = `<b>Ótimo!</b> Para iniciar a 1ª fase, precisamos:<ul style="margin:8px 0 0 18px"><li>Nome da mãe</li><li>Nome do pai</li><li>Data de nascimento</li><li>CPF</li></ul>Após análise, enviaremos as instruções para pagamento de <b>R$ ${VAL}</b>.`;
+    return { previewMsg, docMensagemHTML: docMsg, tipo:"ATIVO_DESENQ" };
   }
 
-  // 4) Regularizar e baixar CNPJ desenquadrado (duas parcelas)
-  if (!simei && (ativo || inapto)) {
-    return {
-      keyword: ativo ? "/PROPOSTA BAIXA ATIVO DESENQ" : (inapto && regime !== "LP" ? "/PROPOSTA BAIXA INAPTO SN" : "/PROPOSTA BAIXA ATIVO DESENQ"),
-      titulo:  "Regularizar e Baixar o CNPJ",
-      valor:   PARC_DUPLA,
-      corpo: [
-        "Etapa 1 (R$ 399): Regularização MEI (DAS + DASN).",
-        "Etapa 2 (R$ 399): Baixa no regime atual (SN/LP) na Receita e Junta.",
-        "Prazo médio: ~15 dias úteis na 2ª etapa."
-      ],
-      tipo: "BAIXA"
-    };
+  if (!simei && (ativo || inapto)){
+    const valor = `${VAL2} (total R$ ${VAL*2})`;
+    const previewMsg =
+      `<b>/PROPOSTA BAIXA ${ativo?'ATIVO':'INAPTO'} DESENQ</b><br>`+
+      `Processo completo para <b>regularizar</b> e <b>baixar</b> o CNPJ desenquadrado:<ol style="margin:8px 0 0 18px"><li><b>R$ ${VAL}</b>: Regularização MEI (DAS + DASN)</li><li><b>R$ ${VAL}</b>: Baixa no regime atual (SN/LP) na Receita e Junta</li></ol><b>Investimento:</b> ${valor}.`;
+    const docMsg = `<b>Excelente decisão!</b> Para iniciarmos o processo completo, precisamos:<ul style="margin:8px 0 0 18px"><li>CPF</li><li>Data de nascimento</li><li>Nome da mãe</li><li>Nome do pai</li></ul>Você pode enviar foto do RG/CNH. Após recebermos os dados, confirmaremos detalhes e enviaremos as instruções para pagar a <b>1ª parcela (R$ ${VAL})</b> após a negociação da Dívida Ativa. A <b>2ª parcela (R$ ${VAL})</b> é paga na conclusão da baixa.`;
+    return { previewMsg, docMensagemHTML: docMsg, tipo:"BAIXA" };
   }
 
   // fallback
-  return {
-    keyword: "PROPOSTA PADRÃO",
-    titulo:  "Regularização Fiscal",
-    valor:   `R$ ${VAL_UNIT}`,
-    corpo: [
-      "Regularização de pendências identificadas.",
-      "Entrega de declarações necessárias.",
-      "Orientações para manter o CNPJ regular."
-    ],
-    tipo: "PADRAO"
-  };
+  const previewMsg = `<b>Proposta:</b> Regularização Fiscal — <b>R$ ${VAL}</b>`;
+  const docMsg = `Para iniciar, envie: nome da mãe, nome do pai, data de nascimento e CPF. Após análise, enviamos as instruções de pagamento de <b>R$ ${VAL}</b>.`;
+  return { previewMsg, docMensagemHTML: docMsg, tipo:"PADRAO" };
 }
 
 // =========================
 // AÇÕES EXTERNAS
 // =========================
-function enviarWhatsApp() {
+function enviarWhatsApp(){
+  enviarWhatsAppComContexto(montarPropostaCompleta(window.diag));
+}
+function enviarWhatsAppComContexto(prop){
   const d = window.dadosCNPJ || {};
-  const p = gerarPropostaComBaseNoDiagnostico(window.diag);
   const msg =
 `Realizei o diagnóstico e quero regularizar.
 CNPJ: ${d.cnpj || ultimoCNPJ || ""}
 Status: ${window.diag.tela1?.status || ""}
-Proposta: ${p.titulo} — ${p.valor}`;
+Proposta: ${prop.previewMsg.replace(/<[^>]+>/g,'')}`;
   window.open(`https://wa.me/554396015785?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 // =========================
-// PDF (Dossiê)
+// PDF
 // =========================
-async function baixarConversa() {
+async function baixarConversa(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  // 1) Fonte Roboto p/ acentos
-  try {
-    const fontUrl = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf"; // Roboto-Regular.ttf
-    const ab = await fetch(fontUrl).then(r => r.arrayBuffer());
-    const b64 = btoa(
-      Array.from(new Uint8Array(ab)).map(b => String.fromCharCode(b)).join("")
-    );
+  // fonte Roboto
+  try{
+    const fontUrl = "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf";
+    const ab = await fetch(fontUrl).then(r=>r.arrayBuffer());
+    const b64 = btoa(Array.from(new Uint8Array(ab)).map(b=>String.fromCharCode(b)).join(""));
     doc.addFileToVFS("Roboto-Regular.ttf", b64);
-    doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-    doc.setFont("Roboto", "normal");
-  } catch (e) {
-    doc.setFont("helvetica", "normal");
-  }
+    doc.addFont("Roboto-Regular.ttf","Roboto","normal");
+    doc.setFont("Roboto","normal");
+  }catch{ doc.setFont("helvetica","normal"); }
 
-  // helper: remove emojis
-  const sanitize = (s = "") =>
-    String(s).replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}]/gu, "");
-
+  const sanitize = (s="")=>String(s).replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}]/gu,"");
   const d = window.dadosCNPJ || {};
   const dataHora = new Date().toLocaleString("pt-BR");
 
-  // 2) Cabeçalho com logo
+  // Cabeçalho
   try {
     const logoUrl = "https://i.ibb.co/b5mX0Xnj/Logo-CNPJ-Legal.png";
     const logoBlob = await fetch(logoUrl).then(res => res.blob());
-    const logoData = await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(logoBlob);
-    });
+    const logoData = await new Promise(r=>{const fr=new FileReader();fr.onloadend=()=>r(fr.result);fr.readAsDataURL(logoBlob);});
     doc.addImage(logoData, "PNG", 14, 10, 40, 15);
   } catch {}
+  doc.setFontSize(16); doc.text(sanitize("Relatório Oficial - CNPJ Legal"), 60, 18);
+  doc.setFontSize(10); doc.text(sanitize(`Gerado em: ${dataHora}`), 60, 24);
+  doc.line(14,28,196,28);
 
-  doc.setFontSize(16);
-  doc.text(sanitize("Relatório Oficial - CNPJ Legal"), 60, 18);
-  doc.setFontSize(10);
-  doc.text(sanitize(`Gerado em: ${dataHora}`), 60, 24);
-  doc.line(14, 28, 196, 28);
-
-  // Nome do empreendedor
-  const nomeEmp = sanitize(
-    d.nome_empresario || d.nome_titular || d.responsavel ||
-    d.company?.owner || d.company?.name || d.razao_social || "—"
-  );
-
-  // 3) Tabela cadastral mínima
-  const linhasCadastrais = [
-    ["Empreendedor", nomeEmp],
+  // Cadastrais
+  const linhas = [
     ["CNPJ", d.cnpj || ultimoCNPJ || "—"],
     ["Razão Social", d.razao_social || d.company?.name || "—"],
     ["Situação Cadastral", window.diag.tela1?.status || "—"],
-    ["Enquadramento", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" : (window.diag.tela5?.simei_optante === false ? "Desenquadrado do MEI" : "—")]
-  ].map(([k, v]) => [sanitize(k), sanitize(String(v))]);
-
-  if (doc.autoTable) {
-    doc.autoTable({
-      startY: 34,
-      head: [["Campo", "Informação"].map(sanitize)],
-      body: linhasCadastrais,
-      theme: "striped",
-      headStyles: { fillColor: [15, 62, 250], textColor: 255 },
-      styles: { fontSize: 10, cellPadding: 3 },
-      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 120 } },
-    });
-  } else {
-    let y = 40;
-    doc.setFontSize(11);
-    linhasCadastrais.forEach(([k, v]) => {
-      doc.text(`${k}: ${v}`, 14, y);
-      y += 6;
-    });
+    ["Enquadramento", window.diag.tela5?.simei_optante===true?"MEI (SIMEI)":(window.diag.tela5?.simei_optante===false?"Desenquadrado do MEI":"—")]
+  ].map(([k,v])=>[sanitize(k), sanitize(String(v))]);
+  if (doc.autoTable){
+    doc.autoTable({startY:34, head:[["Campo","Informação"]], body:linhas, theme:"striped",
+      headStyles:{fillColor:[15,62,250],textColor:255}, styles:{fontSize:10,cellPadding:3}, columnStyles:{0:{cellWidth:60},1:{cellWidth:120}}});
   }
 
-  // 4) Resumo das 5 telas
-  const dasnTxt = window.diag.tela3?.dasn_pendente === true ? "Pendente"
-                : window.diag.tela3?.dasn_pendente === false ? "Em dia"
-                : (window.diag.tela3?.resposta_usuario === "ns" ? "Não informado (usuário)" : "—");
-
+  // Resumo das 5 telas
   const dsum = [
     ["T1 — Situação Cadastral (RFB)", window.diag.tela1?.status || "—"],
     ["T2 — Dívida Ativa (PGFN/CPF)", USE_PGFN ? (window.diag.tela2?.status || "—") : "Consulta não realizada nesta etapa"],
-    ["T3 — Declaração Anual (DASN-SIMEI)", dasnTxt],
-    ["T4 — Débitos DAS (PGMEI)", "Etapa ignorada no chat"],
-    ["T5 — Enquadramento (SIMEI/SN/LP)", window.diag.tela5?.simei_optante === true ? "MEI (SIMEI)" : (window.diag.tela5?.simei_optante === false ? (window.diag.tela5?.regime === "LP" ? "Lucro Presumido" : "Simples Nacional") : "—")]
-  ].map(([k, v]) => [sanitize(k), sanitize(String(v))]);
-
-  if (doc.autoTable) {
-    doc.autoTable({
-      startY: (doc.lastAutoTable?.finalY || 34) + 6,
-      head: [["Etapa", "Resultado"]],
-      body: dsum,
-      theme: "striped",
-      headStyles: { fillColor: [15,62,250], textColor: 255 },
-      styles: { fontSize: 10, cellPadding: 3 }
-    });
+    ["T3 — Declaração Anual (DASN-SIMEI)", window.userAnswers.dasnResposta==="ainda_nao"?"Pendente":(window.userAnswers.dasnResposta==="ja_declarei"?"Em dia":"Informado: não sabe")],
+    ["T4 — Débitos DAS (PGMEI)", "Não avaliado automaticamente"],
+    ["T5 — Enquadramento (SIMEI/SN/LP)", window.diag.tela5?.simei_optante===true?"MEI (SIMEI)":(window.diag.tela5?.simei_optante===false?"Desenquadrado do MEI":"—")]
+  ];
+  if (doc.autoTable){
+    doc.autoTable({startY:(doc.lastAutoTable?.finalY||34)+6, head:[["Etapa","Resultado"]], body:dsum, theme:"striped",
+      headStyles:{fillColor:[15,62,250],textColor:255}, styles:{fontSize:10,cellPadding:3}});
   }
 
-  // 5) Proposta Sugerida
-  const prop = gerarPropostaComBaseNoDiagnostico(window.diag);
-  let y2 = (doc.lastAutoTable?.finalY || 120) + 10;
-  doc.setFontSize(14);
-  doc.setTextColor(0,0,0);
-  doc.text("Proposta Sugerida", 14, y2);
-
-  y2 += 6;
-  doc.setFontSize(11);
-  doc.text(sanitize(`Título: ${prop.titulo}`), 14, y2);
-  y2 += 6;
-  doc.text(sanitize(`Investimento: ${prop.valor}`), 14, y2);
-  y2 += 6;
-  doc.text("Escopo:", 14, y2);
-  y2 += 6;
+  // Proposta resumida
+  const prop = montarPropostaCompleta(window.diag);
+  let y = (doc.lastAutoTable?.finalY || 110) + 10;
+  doc.setFontSize(14); doc.text("Proposta Sugerida",14,y); y+=6;
   doc.setFontSize(10);
-  const escopo = prop.corpo.map(i => `• ${i}`).join("\n");
-  doc.text(doc.splitTextToSize(sanitize(escopo), 182), 14, y2);
+  doc.text(doc.splitTextToSize(sanitize(prop.previewMsg.replace(/<[^>]+>/g,'')), 182),14,y);
 
-  // 6) Chamada + botão WhatsApp (arredondado, texto em negrito)
-  const btnYBase = y2 + 22;
+  // CTA WhatsApp
+  y += 16;
   doc.setFontSize(11);
-  const desc = sanitize("Entre em contato pelo WhatsApp para avançarmos com a regularização.");
-  doc.text(doc.splitTextToSize(desc, 182), 14, btnYBase);
+  doc.text("Entre em contato pelo WhatsApp para avançarmos com a regularização.", 14, y);
+  const btnY = y+6, btnX=14, btnW=95, btnH=12, radius=btnH/2;
+  doc.setFillColor(23,227,13);
+  if (doc.roundedRect) doc.roundedRect(btnX,btnY,btnW,btnH,radius,radius,"F"); else doc.rect(btnX,btnY,btnW,btnH,"F");
+  doc.setTextColor(0,0,0); doc.setFontSize(11); doc.text("Falar no WhatsApp", btnX+8, btnY+8);
+  const link = `https://wa.me/554396015785?text=${encodeURIComponent("Quero regularizar meu CNPJ")}`;
+  doc.link(btnX,btnY,btnW,btnH,{url:link});
 
-  const btnY = btnYBase + 8;
-  const btnX = 14;
-  const btnW = 95;
-  const btnH = 12;
-  const radius = btnH / 2; // 100% arredondado
+  // Rodapé
+  doc.setTextColor(100); doc.setFontSize(9);
+  doc.text("Instagram: @cnpjlegal",14,btnY+22);
+  doc.text("Site oficial: www.cnpjlegal.com.br",14,btnY+27);
 
-  doc.setFillColor(23, 227, 13);
-  if (doc.roundedRect) {
-    doc.roundedRect(btnX, btnY, btnW, btnH, radius, radius, "F");
-  } else {
-    doc.rect(btnX, btnY, btnW, btnH, "F");
-  }
-  doc.setTextColor(0, 0, 0);
-  try { doc.setFont(undefined, "bold"); } catch {}
-  doc.setFontSize(11);
-  doc.text(sanitize("Falar no WhatsApp"), btnX + 8, btnY + 8);
-
-  const linkWhats = `https://wa.me/554396015785?text=${encodeURIComponent(
-    "Quero regularizar meu CNPJ"
-  )}`;
-  doc.link(btnX, btnY, btnW, btnH, { url: linkWhats });
-
-  // 7) Rodapé
-  let fy = btnY + 22;
-  try { doc.setFont(undefined, "normal"); } catch {}
-  doc.setFontSize(9);
-  doc.setTextColor(100);
-  doc.text(sanitize("Instagram: @cnpjlegal"), 14, fy);
-  fy += 5;
-  doc.text(sanitize("Site oficial: www.cnpjlegal.com.br"), 14, fy);
-
-  // 8) Salvar
   const nomeArq = `CNPJ_Legal_${(d.cnpj || ultimoCNPJ || "relatorio").replace(/\D/g,'')}.pdf`;
   doc.save(nomeArq);
 }
 
-// Expor no escopo global
+// Expor
 window.consultarCNPJ = consultarCNPJ;
 window.enviarWhatsApp = enviarWhatsApp;
 window.baixarConversa = baixarConversa;
+
+// init
+document.addEventListener('DOMContentLoaded', prepararHeroChips);
