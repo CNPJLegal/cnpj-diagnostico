@@ -11,7 +11,7 @@
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background-color: #000;
   color: #fff;
   line-height: 1.5;
@@ -196,6 +196,8 @@ input {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* garante espaço para os botões fixos não cobrirem o final do chat */
+  padding-bottom: 120px;
 }
 
 /* Linha (container) das mensagens */
@@ -229,22 +231,21 @@ input {
   word-break: break-word;
 }
 
-/* Aparência das bolhas por tipo */
-.msg-bot {
-  align-self: flex-start;
-}
-.msg-bot span {
-  background: #0f3efa;
-  color: #fff;
+/* Listas dentro das bolhas */
+.msg-bot span ul,
+.msg-bot span ol,
+.msg-user span ul,
+.msg-user span ol {
+  margin: 8px 0 0 0;
+  padding-left: 18px;
 }
 
-.msg-user {
-  align-self: flex-end;
-}
-.msg-user span {
-  background: #f1f1f1;
-  color: #000;
-}
+/* Aparência das bolhas por tipo */
+.msg-bot { align-self: flex-start; }
+.msg-bot span { background: #0f3efa; color: #fff; }
+
+.msg-user { align-self: flex-end; }
+.msg-user span { background: #f1f1f1; color: #000; }
 
 /* Animação de digitação */
 .typing-dots {
@@ -278,12 +279,15 @@ input {
 .opcoes-botoes {
   display: flex;
   gap: 8px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;            /* <- permite quebrar linha no mobile */
+  width: 100%;
 }
+
 .opcoes-botoes button {
-  flex: 1;
+  flex: 1 1 0;                /* <- distribui igualmente */
+  min-width: 32%;             /* <- 3 botões cabem em 2 linhas se precisar */
   margin: 4px 0;
-  padding: 8px 12px;
+  padding: 10px 14px;         /* <- alvo de toque maior */
   border: none;
   border-radius: 16px;
   background: #0f3efa;
@@ -297,7 +301,6 @@ input {
 .opcoes-botoes button.verde {
   background: #17e30d;
   color: #000;
-  font-weight: bold;
 }
 .opcoes-botoes button.verde:hover { background: #13b80a; }
 
