@@ -2,23 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Consulta CNPJ - Diagnóstico Completo</title>
   <meta name="description" content="Faça um diagnóstico completo do seu CNPJ e descubra pendências junto à Receita Federal, PGMEI e PGFN.">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
   <!-- CSS -->
-  <link rel="stylesheet" href="/static/style.css?v=5" />
-  <style>
-    /* Botão verde fixo */
-    .btn-download {
-      background-color: #17e30d !important;
-      color: #000 !important;
-    }
-    /* Ajuste de margem inferior */
-    body {
-      margin-bottom: 20px;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
 
@@ -27,12 +16,12 @@
     <div class="headline-card">
       <h1>Faça um diagnóstico completo do seu CNPJ agora mesmo</h1>
       <p>Identificamos todas as pendências associadas ao seu CNPJ:</p>
-      <div class="card-list" id="pillList">
-        <div class="card-item" data-focus="cnpjInput">Situação Cadastral</div>
-        <div class="card-item" data-focus="cnpjInput">Situação do Enquadramento</div>
-        <div class="card-item" data-focus="cnpjInput">Declaração Anual de Faturamento</div>
-        <div class="card-item" data-focus="cnpjInput">Dívida Ativa</div>
-        <div class="card-item" data-focus="cnpjInput">Demais Débitos</div>
+      <div class="card-list">
+        <div class="card-item">Situação Cadastral</div>
+        <div class="card-item">Situação do Enquadramento</div>
+        <div class="card-item">Declaração Anual de Faturamento</div>
+        <div class="card-item">Dívida Ativa</div>
+        <div class="card-item">Demais Débitos</div>
       </div>
     </div>
   </section>
@@ -49,7 +38,7 @@
         inputmode="numeric"
         aria-label="Digite o CNPJ"
       />
-      <button id="consultarBtn" class="btn-primary" onclick="consultarCNPJ()">Consultar</button>
+      <button id="consultarBtn" onclick="consultarCNPJ()">Consultar</button>
     </div>
 
     <!-- Chat -->
@@ -60,51 +49,24 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-  <!-- JS principal -->
-  <script src="/static/script.js?v=5" defer></script>
+  <!-- JS principal (sem querystring pra evitar 404) -->
+  <script src="/static/script.js" defer></script>
 
-  <!-- Botão fixo: iniciar regularização -->
-  <button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()" aria-label="Iniciar regularização">
+  <!-- Botão fixo: continuar a regularização (mostrado pelo JS com .show) -->
+  <button id="btnRegularizar" class="btn-regularizar" onclick="enviarWhatsApp()" aria-label="Continuar a regularização">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 12l7 7 11-11"/>
     </svg>
     Continuar a regularização
   </button>
 
-  <!-- Botão fixo: baixar PDF -->
-  <button id="btnDownload" class="btn-download" style="display:none;" onclick="baixarConversa()" aria-label="Baixar diagnóstico em PDF">
+  <!-- Botão fixo: baixar PDF (fica invisível até o JS aplicar .show) -->
+  <button id="btnDownload" class="btn-download" onclick="baixarConversa()" aria-label="Baixar diagnóstico em PDF">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"/>
     </svg>
     Baixar Diagnóstico
   </button>
-
-  <!-- Botão: consultar novo CNPJ -->
-  <button id="btnNovoCNPJ" class="btn-primary" style="display:none;" onclick="novoCNPJ()">
-    Consultar novo CNPJ
-  </button>
-
-  <script>
-    // Rolar até o campo de CNPJ ao clicar nas opções azuis
-    document.querySelectorAll('[data-focus="cnpjInput"]').forEach(el => {
-      el.addEventListener('click', () => {
-        document.getElementById('cnpjInput').scrollIntoView({ behavior: 'smooth' });
-        document.getElementById('cnpjInput').focus();
-      });
-    });
-
-    // Mostrar botões após WhatsApp
-    function enviarWhatsApp() {
-      window.open('https://api.whatsapp.com/message/H3JQBE7FJI2RP1?autoload=1&app_absent=0', '_blank');
-      document.getElementById('btnDownload').style.display = 'inline-flex';
-      document.getElementById('btnNovoCNPJ').style.display = 'inline-flex';
-    }
-    function novoCNPJ() {
-      document.getElementById('cnpjInput').value = '';
-      document.getElementById('resultado').innerHTML = '';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  </script>
 
 </body>
 </html>
